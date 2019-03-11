@@ -2,6 +2,7 @@ package immutableList
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 )
 
@@ -10,10 +11,35 @@ func TestAppend(t *testing.T) {
 	list = list.Append(val(1)).Append(val(2)).Append(val(3))
 	validateList(t, list, 3)
 
-	for i := 4; i <= 100; i++ {
+	for i := 4; i <= 1024; i++ {
 		list = list.Append(val(i))
 	}
-	validateList(t, list, 100)
+	validateList(t, list, 1024)
+}
+
+func TestSelect(t *testing.T) {
+	list := Create()
+	for i := 1; i <= 1024; i++ {
+		list = list.Append(val(i))
+	}
+	list = list.Select(func(obj Object) bool {
+		i, _ := strconv.ParseInt(obj.(string), 10, 64)
+		return i <= 512
+	})
+	validateList(t, list, 512)
+}
+
+func TestSlice(t *testing.T) {
+	list := Create()
+	for i := 1; i <= 400; i++ {
+		list = list.Append(val(i))
+	}
+	sliced := list.Slice(0, 123)
+	for i, v := range sliced {
+		if val(i+1) != v.(string) {
+			t.Error(fmt.Sprintf("slice expected %v/%s but got %v/%s", i, val(i+1), i, v))
+		}
+	}
 }
 
 func validateList(t *testing.T, list List, size int) {
