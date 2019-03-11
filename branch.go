@@ -43,6 +43,24 @@ func (this branchNode) forEach(proc Processor) {
 	}
 }
 
+func (this branchNode) visit(start int, limit int, visitor Visitor) {
+	childStart := 0
+	for _, child := range this.children {
+		if childStart >= limit {
+			break
+		}
+		childEnd := childStart + child.size()
+		if childStart >= start {
+			childLimit := minInt(limit, childEnd)
+			child.visit(start-childStart, childLimit-childStart, func(index int, obj Object) {
+				visitor(childStart+index, obj)
+			})
+			start = childLimit
+		}
+		childStart = childEnd
+	}
+}
+
 func replaceLast(from []node, replacement node) []node {
 	oldLen := len(from)
 	newNodes := make([]node, oldLen)
@@ -71,7 +89,7 @@ func splitAppendReplaceLast(from []node, replacement node, extra node) ([]node, 
 	secondLen := newLen - firstLen
 
 	first := make([]node, firstLen)
-	second := make([] node, secondLen)
+	second := make([]node, secondLen)
 	for i, v := range from {
 		if i < firstLen {
 			first[i] = v
@@ -90,4 +108,20 @@ func computeNodeSize(children []node) int {
 		answer += child.size()
 	}
 	return answer
+}
+
+func minInt(a, b int) int {
+	if a < b {
+		return a
+	} else {
+		return b
+	}
+}
+
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	} else {
+		return b
+	}
 }

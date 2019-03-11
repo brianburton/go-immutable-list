@@ -16,3 +16,5 @@ func (_ emptyNode) append(value Object) (node, node) {
 }
 
 func (_ emptyNode) forEach(proc Processor) {}
+
+func (_ emptyNode) visit(start int, limit int, v Visitor) {}

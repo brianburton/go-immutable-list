@@ -31,6 +31,12 @@ func (this leafNode) forEach(proc Processor) {
 	}
 }
 
+func (this leafNode) visit(start int, limit int, v Visitor) {
+	for i := start; i < limit; i++ {
+		v(i, this.contents[i])
+	}
+}
+
 func appendObject(from []Object, extra Object) []Object {
 	oldLen := len(from)
 	newObjects := make([]Object, oldLen+1)
@@ -48,7 +54,7 @@ func splitAppendObject(from []Object, extra Object) ([]Object, []Object) {
 	secondLen := newLen - firstLen
 
 	first := make([]Object, firstLen)
-	second := make([] Object, secondLen)
+	second := make([]Object, secondLen)
 	for i, v := range from {
 		if i < firstLen {
 			first[i] = v

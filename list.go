@@ -8,13 +8,16 @@ const (
 type Object interface{}
 
 type Processor func(Object)
+type Visitor func(int, Object)
 
 type List interface {
 	Size() int
 	Get(index int) Object
 	Append(value Object) List
 	ForEach(proc Processor)
-	Select(predicate func(Object)bool) List
+	Visit(offset int, limit int, v Visitor)
+	Select(predicate func(Object) bool) List
+	Slice(offset, limit int) []Object
 }
 
 type node interface {
@@ -22,6 +25,7 @@ type node interface {
 	get(index int) Object
 	append(value Object) (node, node)
 	forEach(proc Processor)
+	visit(start int, limit int, v Visitor)
 }
 
 type listImpl struct {
@@ -55,13 +59,32 @@ func (this listImpl) ForEach(proc Processor) {
 	this.root.forEach(proc)
 }
 
-func (this listImpl) Select(predicate func(Object)bool) List {
-	list := Create()
-	answer := &list
+func (this listImpl) Visit(offset int, limit int, visitor Visitor) {
+	offset = maxInt(0, offset)
+	limit = minInt(limit, this.root.size())
+	this.root.visit(offset, limit, visitor)
+}
+
+func (this listImpl) Select(predicate func(Object) bool) List {
+	answer := Create()
 	this.root.forEach(func(obj Object) {
 		if predicate(obj) {
-			*answer = (*answer).Append(obj)
+			answer = answer.Append(obj)
 		}
 	})
-	return *answer
+	return answer
+}
+
+func (this listImpl) Slice(offset, limit int) []Object {
+	if offset < 0 || limit < offset || limit > this.Size() {
+		return nil
+	}
+	if limit == offset {
+		return make([]Object, 0)
+	}
+	answer := make([]Object, limit-offset)
+	this.root.visit(offset, limit, func(index int, obj Object) {
+		answer[index-offset] = obj
+	})
+	return answer
 }
