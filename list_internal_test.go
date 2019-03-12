@@ -17,6 +17,18 @@ func TestAppend(t *testing.T) {
 	validateList(t, list, 1024)
 }
 
+func TestInsert(t *testing.T) {
+	list := Create()
+	list = list.Insert(-1, val(1)).Insert(1, val(512))
+
+	for i := 2; i <= 256; i++ {
+		list = list.Insert(i-1, val(i))
+		list = list.Insert(i, val(513-i))
+	}
+
+	validateList(t, list, 512)
+}
+
 func TestSelect(t *testing.T) {
 	list := Create()
 	for i := 1; i <= 1024; i++ {

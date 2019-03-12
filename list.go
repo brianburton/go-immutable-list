@@ -14,6 +14,7 @@ type List interface {
 	Size() int
 	Get(index int) Object
 	Append(value Object) List
+	Insert(indexBefore int, value Object) List
 	ForEach(proc Processor)
 	Visit(offset int, limit int, v Visitor)
 	Select(predicate func(Object) bool) List
@@ -24,6 +25,7 @@ type node interface {
 	size() int
 	get(index int) Object
 	append(value Object) (node, node)
+	insert(indexBefore int, value Object) (node, node)
 	forEach(proc Processor)
 	visit(start int, limit int, v Visitor)
 }
@@ -46,6 +48,20 @@ func (this listImpl) Get(index int) Object {
 
 func (this listImpl) Append(value Object) List {
 	replacement, extra := this.root.append(value)
+	return listInsertImpl(replacement, extra)
+}
+
+func (this listImpl) Insert(indexBefore int, value Object) List {
+	currentSize := this.root.size()
+	if indexBefore >= currentSize {
+		return this.Append(value)
+	} else {
+		replacement, extra := this.root.insert(maxInt(0, indexBefore), value)
+		return listInsertImpl(replacement, extra)
+	}
+}
+
+func listInsertImpl(replacement node, extra node) List {
 	if extra == nil {
 		return listImpl{root: replacement}
 	} else {

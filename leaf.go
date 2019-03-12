@@ -17,10 +17,15 @@ func (this leafNode) get(index int) Object {
 }
 
 func (this leafNode) append(value Object) (node, node) {
-	if len(this.contents) < maxPerNode {
-		return leafNode{contents: appendObject(this.contents, value)}, nil
+	return this.insert(len(this.contents), value)
+}
+
+func (this leafNode) insert(indexBefore int, value Object) (node, node) {
+	currentSize := len(this.contents)
+	if currentSize < maxPerNode {
+		return leafNode{contents: insertObject(indexBefore, value, this.contents)}, nil
 	} else {
-		first, second := splitAppendObject(this.contents, value)
+		first, second := splitInsertObject(indexBefore, value, this.contents)
 		return leafNode{contents: first}, leafNode{contents: second}
 	}
 }
@@ -37,31 +42,51 @@ func (this leafNode) visit(start int, limit int, v Visitor) {
 	}
 }
 
-func appendObject(from []Object, extra Object) []Object {
-	oldLen := len(from)
-	newObjects := make([]Object, oldLen+1)
-	for i, v := range from {
-		newObjects[i] = v
+func insertObject(insertIndex int, extra Object, from []Object) []Object {
+	newObjects := make([]Object, len(from)+1)
+
+	index := 0
+	insert := func(obj Object) {
+		newObjects[index] = obj
+		index++
 	}
-	newObjects[oldLen] = extra
+	for _, v := range from {
+		if index == insertIndex {
+			insert(extra)
+		}
+		insert(v)
+	}
+	if index == insertIndex {
+		insert(extra)
+	}
 	return newObjects
 }
 
-func splitAppendObject(from []Object, extra Object) ([]Object, []Object) {
-	oldLen := len(from)
-	newLen := oldLen + 1
-	firstLen := newLen - (oldLen / 2)
-	secondLen := newLen - firstLen
-
+func splitInsertObject(insertIndex int, extra Object, from []Object) ([]Object, []Object) {
+	newLen := len(from) + 1
+	secondLen := newLen / 2
+	firstLen := newLen - secondLen
 	first := make([]Object, firstLen)
 	second := make([]Object, secondLen)
-	for i, v := range from {
-		if i < firstLen {
-			first[i] = v
+
+	index := 0
+	insert := func(obj Object) {
+		if index < firstLen {
+			first[index] = obj
 		} else {
-			second[i-firstLen] = v
+			second[index-firstLen] = obj
 		}
+		index++
 	}
-	second[secondLen-1] = extra
+
+	for _, value := range from {
+		if index == insertIndex {
+			insert(extra)
+		}
+		insert(value)
+	}
+	if index == insertIndex {
+		insert(extra)
+	}
 	return first, second
 }

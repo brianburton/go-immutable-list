@@ -20,21 +20,45 @@ func (this branchNode) get(index int) Object {
 }
 
 func (this branchNode) append(value Object) (node, node) {
-	newSize := this.totalSize + 1
-	oldLen := len(this.children)
-	replacement, extra := this.children[oldLen-1].append(value)
+	lastIndex := len(this.children) - 1
+	replacement, extra := this.children[lastIndex].append(value)
+	return replaceImpl(this.totalSize, this.children, lastIndex, replacement, extra)
+}
+
+func (this branchNode) insert(indexBefore int, value Object) (node, node) {
+	childIndex, childOffset := findChildForInsert(indexBefore, this.children)
+	replacement, extra := this.children[childIndex].insert(childOffset, value)
+	return replaceImpl(this.totalSize, this.children, childIndex, replacement, extra)
+}
+
+func findChildForInsert(indexBefore int, children []node) (int, int) {
+	childIndex := 0
+	childStart := 0
+	for _, child := range children {
+		childEnd := childStart + child.size()
+		if childStart <= indexBefore && indexBefore < childEnd {
+			break
+		}
+		childStart = childEnd
+		childIndex++
+	}
+	return childIndex, indexBefore - childStart
+}
+
+func replaceImpl(totalSize int, children []node, replaceIndex int, replacement node, extra node) (node, node) {
+	newSize := totalSize + 1
 	if extra == nil {
-		newChildren := replaceLast(this.children, replacement)
+		newChildren := replaceNode(replaceIndex, replacement, children)
 		return branchNode{children: newChildren, totalSize: newSize}, nil
-	}
-	if oldLen < maxPerNode {
-		newChildren := appendReplaceLast(this.children, replacement, extra)
+	} else if len(children) < maxPerNode {
+		newChildren := insertReplaceNode(replaceIndex, replacement, extra, children)
 		return branchNode{children: newChildren, totalSize: newSize}, nil
+	} else {
+		first, second := splitInsertReplaceNode(replaceIndex, replacement, extra, children)
+		child1 := branchNode{children: first, totalSize: computeNodeSize(first)}
+		child2 := branchNode{children: second, totalSize: computeNodeSize(second)}
+		return child1, child2
 	}
-	first, second := splitAppendReplaceLast(this.children, replacement, extra)
-	child1 := branchNode{children: first, totalSize: computeNodeSize(first)}
-	child2 := branchNode{children: second, totalSize: computeNodeSize(second)}
-	return child1, child2
 }
 
 func (this branchNode) forEach(proc Processor) {
@@ -61,44 +85,64 @@ func (this branchNode) visit(start int, limit int, visitor Visitor) {
 	}
 }
 
-func replaceLast(from []node, replacement node) []node {
-	oldLen := len(from)
-	newNodes := make([]node, oldLen)
+func replaceNode(replaceIndex int, replacement node, from []node) []node {
+	newNodes := make([]node, len(from))
 	for i, v := range from {
+		if i == replaceIndex {
+			v = replacement
+		}
 		newNodes[i] = v
 	}
-	newNodes[oldLen-1] = replacement
 	return newNodes
 }
 
-func appendReplaceLast(from []node, replacement node, extra node) []node {
-	oldLen := len(from)
-	newNodes := make([]node, oldLen+1)
-	for i, v := range from {
-		newNodes[i] = v
+func insertReplaceNode(replaceIndex int, replacement node, extra node, from []node) []node {
+	newNodes := make([]node, len(from)+1)
+
+	index := 0
+	insert := func(obj node) {
+		newNodes[index] = obj
+		index++
 	}
-	newNodes[oldLen-1] = replacement
-	newNodes[oldLen] = extra
-	return newNodes
-}
 
-func splitAppendReplaceLast(from []node, replacement node, extra node) ([]node, []node) {
-	oldLen := len(from)
-	newLen := oldLen + 1
-	firstLen := newLen - (oldLen / 2)
-	secondLen := newLen - firstLen
-
-	first := make([]node, firstLen)
-	second := make([]node, secondLen)
 	for i, v := range from {
-		if i < firstLen {
-			first[i] = v
+		if i == replaceIndex {
+			insert(replacement)
+			insert(extra)
 		} else {
-			second[i-firstLen] = v
+			insert(v)
 		}
 	}
-	second[secondLen-2] = replacement
-	second[secondLen-1] = extra
+
+	return newNodes
+}
+
+func splitInsertReplaceNode(replaceIndex int, replacement node, extra node, from []node) ([]node, []node) {
+	newLen := len(from) + 1
+	secondLen := newLen / 2
+	firstLen := newLen - secondLen
+	first := make([]node, firstLen)
+	second := make([]node, secondLen)
+
+	index := 0
+	insert := func(obj node) {
+		if index < firstLen {
+			first[index] = obj
+		} else {
+			second[index-firstLen] = obj
+		}
+		index++
+	}
+
+	for i, v := range from {
+		if i == replaceIndex {
+			insert(replacement)
+			insert(extra)
+		} else {
+			insert(v)
+		}
+	}
+
 	return first, second
 }
 
