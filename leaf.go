@@ -50,6 +50,13 @@ func (this leafNode) visit(start int, limit int, v Visitor) {
 	}
 }
 
+func (this leafNode) depth() int {
+	return 1
+}
+
+func (this leafNode) visitNodesOfDepth(targetDepth int, proc nodeProcessor) {
+}
+
 func insertObject(insertIndex int, extra Object, from []Object) []Object {
 	newObjects := make([]Object, len(from)+1)
 

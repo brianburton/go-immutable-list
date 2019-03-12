@@ -17,7 +17,6 @@ type leafBuilder struct {
 }
 
 type branchBuilder struct {
-	depth  int
 	parent *branchBuilder
 	count  int
 	buffer []node
@@ -51,7 +50,7 @@ func (this *leafBuilder) addValue(value Object) {
 	this.count++
 	if this.count == maxPerNode {
 		if this.parent == nil {
-			this.parent = createBranchBuilder(1)
+			this.parent = createBranchBuilder()
 		}
 		this.parent.addNode(createLeafNode(this.buffer, minPerNode))
 		for i := minPerNode; i < maxPerNode; i++ {
@@ -79,9 +78,8 @@ func (this *leafBuilder) computeSize() int {
 	return answer
 }
 
-func createBranchBuilder(depth int) *branchBuilder {
+func createBranchBuilder() *branchBuilder {
 	var answer branchBuilder
-	answer.depth = depth
 	answer.buffer = make([]node, maxPerNode)
 	return &answer
 }
@@ -91,7 +89,7 @@ func (this *branchBuilder) addNode(node node) {
 	this.count++
 	if this.count == maxPerNode {
 		if this.parent == nil {
-			this.parent = createBranchBuilder(this.depth + 1)
+			this.parent = createBranchBuilder()
 		}
 		this.parent.addNode(createBranchNode(this.buffer, minPerNode))
 		for i := minPerNode; i < maxPerNode; i++ {
@@ -111,6 +109,15 @@ func (this *branchBuilder) build(extra node) node {
 	return answer
 }
 
+func (this *branchBuilder) buildForMerge() node {
+	var answer node
+	answer = createBranchNode(this.buffer, this.count)
+	if this.parent != nil {
+		answer = this.parent.build(answer)
+	}
+	return answer
+}
+
 func (this *branchBuilder) computeSize() int {
 	answer := 0
 	for i := 0; i < this.count; i++ {
@@ -120,4 +127,14 @@ func (this *branchBuilder) computeSize() int {
 		answer += this.parent.computeSize()
 	}
 	return answer
+}
+
+func mergeLists(depth int, root1 node, root2 node) node {
+	builder := createBranchBuilder()
+	proc := func(n node) {
+		builder.addNode(n)
+	}
+	root1.visitNodesOfDepth(depth, proc)
+	root2.visitNodesOfDepth(depth, proc)
+	return builder.buildForMerge()
 }

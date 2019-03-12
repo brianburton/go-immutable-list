@@ -1,7 +1,7 @@
 package immutableList
 
 const (
-	minPerNode = 9
+	minPerNode = 8
 	maxPerNode = 2 * minPerNode
 )
 
@@ -9,11 +9,13 @@ type Object interface{}
 
 type Processor func(Object)
 type Visitor func(int, Object)
+type nodeProcessor func(node)
 
 type List interface {
 	Size() int
 	Get(index int) Object
 	Append(value Object) List
+	AppendList(other List) List
 	Insert(indexBefore int, value Object) List
 	ForEach(proc Processor)
 	Visit(offset int, limit int, v Visitor)
@@ -28,6 +30,8 @@ type node interface {
 	insert(indexBefore int, value Object) (node, node)
 	forEach(proc Processor)
 	visit(start int, limit int, v Visitor)
+	depth() int
+	visitNodesOfDepth(targetDepth int, proc nodeProcessor)
 }
 
 type listImpl struct {
@@ -49,6 +53,32 @@ func (this listImpl) Get(index int) Object {
 func (this listImpl) Append(value Object) List {
 	replacement, extra := this.root.append(value)
 	return listInsertImpl(replacement, extra)
+}
+
+func (this listImpl) AppendList(other List) List {
+	otherImpl := other.(listImpl)
+	thisDepth := this.root.depth()
+	otherDepth := otherImpl.root.depth()
+
+	var answer List
+	if otherDepth == 1 {
+		answer = this
+		other.ForEach(func(object Object) {
+			answer = answer.Append(object)
+		})
+	} else if thisDepth == 1 {
+		answer = other
+		index := 0
+		this.ForEach(func(object Object) {
+			answer = answer.Insert(index, object)
+			index++
+		})
+	} else {
+		commonDepth := minInt(thisDepth, otherDepth)
+		newRoot := mergeLists(commonDepth, this.root, otherImpl.root)
+		answer = listImpl{newRoot}
+	}
+	return answer
 }
 
 func (this listImpl) Insert(indexBefore int, value Object) List {

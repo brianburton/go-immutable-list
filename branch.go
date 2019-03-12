@@ -95,6 +95,21 @@ func (this branchNode) visit(start int, limit int, visitor Visitor) {
 	}
 }
 
+func (this branchNode) depth() int {
+	return 1 + this.children[0].depth()
+}
+
+func (this branchNode) visitNodesOfDepth(targetDepth int, proc nodeProcessor) {
+	myDepth := this.depth()
+	if myDepth == targetDepth {
+		proc(this)
+	} else if myDepth > targetDepth {
+		for _, child := range this.children {
+			child.visitNodesOfDepth(targetDepth, proc)
+		}
+	}
+}
+
 func replaceNode(replaceIndex int, replacement node, from []node) []node {
 	newNodes := make([]node, len(from))
 	for i, v := range from {

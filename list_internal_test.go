@@ -79,6 +79,33 @@ func TestBuilder(t *testing.T) {
 	validateList(t, builder.Build(), 700)
 }
 
+func TestAppendList(t *testing.T) {
+	for totalSize := 1; totalSize <= 100; totalSize++ {
+		for firstSize := 0; firstSize <= totalSize; firstSize++ {
+			first := createListForTest(1, firstSize)
+			second := createListForTest(firstSize+1, totalSize)
+			merged := first.AppendList(second)
+			validateList(t, merged, totalSize)
+		}
+	}
+
+	var merged List
+	merged = createListForTest(1, 1000).AppendList(createListForTest(1001, 2000))
+	validateList(t, merged, 2000)
+	merged = createListForTest(1, 1000).AppendList(createListForTest(1001, 20000))
+	validateList(t, merged, 20000)
+	merged = createListForTest(1, 6000).AppendList(createListForTest(6001, 17758))
+	validateList(t, merged, 17758)
+}
+
+func createListForTest(firstValue int, lastValue int) List {
+	builder := CreateBuilder()
+	for i := firstValue; i <= lastValue; i++ {
+		builder.Add(val(i))
+	}
+	return builder.Build()
+}
+
 func validateList(t *testing.T, list List, size int) {
 	if list.Size() != size {
 		t.Error(fmt.Sprintf("expected size %d but got %v", size, list.Size()))

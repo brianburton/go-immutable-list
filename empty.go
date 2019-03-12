@@ -3,6 +3,13 @@ package immutableList
 type emptyNode struct {
 }
 
+func (_ emptyNode) visitNodesOfDepth(targetDepth int, proc nodeProcessor) {
+}
+
+func (_ emptyNode) depth() int {
+	return 1
+}
+
 func (_ emptyNode) size() int {
 	return 0
 }
