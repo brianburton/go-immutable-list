@@ -5,6 +5,16 @@ type branchNode struct {
 	totalSize int
 }
 
+func createBranchNode(nodeBuffer []node, count int) node {
+	totalSize := 0
+	children := make([]node, count)
+	for i := 0; i < count; i++ {
+		children[i] = nodeBuffer[i]
+		totalSize += nodeBuffer[i].size()
+	}
+	return branchNode{children, totalSize}
+}
+
 func (this branchNode) size() int {
 	return this.totalSize
 }

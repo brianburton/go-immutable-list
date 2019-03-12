@@ -54,6 +54,31 @@ func TestSlice(t *testing.T) {
 	}
 }
 
+func TestBuilder(t *testing.T) {
+	builder := CreateBuilder()
+	validateList(t, builder.Build(), 0)
+	for i := 1; i <= maxPerNode; i++ {
+		builder.Add(val(i))
+		validateSize(t, builder.Size(), i)
+		validateList(t, builder.Build(), i)
+	}
+	for i := maxPerNode + 1; i <= 200; i++ {
+		builder.Add(val(i))
+	}
+	validateSize(t, builder.Size(), 200)
+	validateList(t, builder.Build(), 200)
+	for i := 201; i <= 512; i++ {
+		builder.Add(val(i))
+	}
+	validateSize(t, builder.Size(), 512)
+	validateList(t, builder.Build(), 512)
+	for i := 513; i <= 700; i++ {
+		builder.Add(val(i))
+	}
+	validateSize(t, builder.Size(), 700)
+	validateList(t, builder.Build(), 700)
+}
+
 func validateList(t *testing.T, list List, size int) {
 	if list.Size() != size {
 		t.Error(fmt.Sprintf("expected size %d but got %v", size, list.Size()))
@@ -74,6 +99,12 @@ func validateList(t *testing.T, list List, size int) {
 		if actual != expected {
 			t.Error(fmt.Sprintf("get expected %v/%s but got %v/%s", i, expected, i, expected))
 		}
+	}
+}
+
+func validateSize(t *testing.T, actual int, expected int) {
+	if actual != expected {
+		t.Error(fmt.Sprintf("expected size %d but got %v", expected, actual))
 	}
 }
 

@@ -4,6 +4,14 @@ type leafNode struct {
 	contents []Object
 }
 
+func createLeafNode(objectBuffer []Object, count int) node {
+	contents := make([]Object, count)
+	for i := 0; i < count; i++ {
+		contents[i] = objectBuffer[i]
+	}
+	return leafNode{contents}
+}
+
 func (this leafNode) size() int {
 	return len(this.contents)
 }
