@@ -54,6 +54,10 @@ func (this leafNode) depth() int {
 	return 1
 }
 
+func (this leafNode) maxCompleteDepth() int {
+	return 1
+}
+
 func (this leafNode) visitNodesOfDepth(targetDepth int, proc nodeProcessor) {
 }
 

@@ -31,6 +31,7 @@ type node interface {
 	forEach(proc Processor)
 	visit(start int, limit int, v Visitor)
 	depth() int
+	maxCompleteDepth() int
 	visitNodesOfDepth(targetDepth int, proc nodeProcessor)
 }
 
@@ -57,10 +58,10 @@ func (this listImpl) Append(value Object) List {
 
 func (this listImpl) AppendList(other List) List {
 	otherImpl := other.(listImpl)
-	thisDepth := this.root.depth()
-	otherDepth := otherImpl.root.depth()
 
 	var answer List
+	thisDepth := this.root.maxCompleteDepth()
+	otherDepth := otherImpl.root.maxCompleteDepth()
 	if otherDepth == 1 {
 		answer = this
 		other.ForEach(func(object Object) {

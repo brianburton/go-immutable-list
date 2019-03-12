@@ -99,6 +99,14 @@ func (this branchNode) depth() int {
 	return 1 + this.children[0].depth()
 }
 
+func (this branchNode) maxCompleteDepth() int {
+	if len(this.children) >= minPerNode {
+		return this.depth()
+	} else {
+		return this.children[0].maxCompleteDepth()
+	}
+}
+
 func (this branchNode) visitNodesOfDepth(targetDepth int, proc nodeProcessor) {
 	myDepth := this.depth()
 	if myDepth == targetDepth {
