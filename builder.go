@@ -53,9 +53,7 @@ func (this *leafBuilder) addValue(value Object) {
 			this.parent = createBranchBuilder()
 		}
 		this.parent.addNode(createLeafNode(this.buffer, minPerNode))
-		for i := minPerNode; i < maxPerNode; i++ {
-			this.buffer[i-minPerNode] = this.buffer[i]
-		}
+		copy(this.buffer[0:], this.buffer[minPerNode:this.count])
 		this.count -= minPerNode
 	}
 }
@@ -92,9 +90,7 @@ func (this *branchBuilder) addNode(node node) {
 			this.parent = createBranchBuilder()
 		}
 		this.parent.addNode(createBranchNode(this.buffer, minPerNode))
-		for i := minPerNode; i < maxPerNode; i++ {
-			this.buffer[i-minPerNode] = this.buffer[i]
-		}
+		copy(this.buffer[0:], this.buffer[minPerNode:this.count])
 		this.count -= minPerNode
 	}
 }

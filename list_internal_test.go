@@ -19,7 +19,7 @@ func TestAppend(t *testing.T) {
 
 func TestInsert(t *testing.T) {
 	list := Create()
-	list = list.Insert(-1, val(1)).Insert(1, val(512))
+	list = list.Insert(0, val(1)).Insert(1, val(512))
 
 	for i := 2; i <= 256; i++ {
 		list = list.Insert(i-1, val(i))
@@ -51,6 +51,10 @@ func TestSlice(t *testing.T) {
 		if val(i+1) != v.(string) {
 			t.Error(fmt.Sprintf("slice expected %v/%s but got %v/%s", i, val(i+1), i, v))
 		}
+	}
+	sliced = list.Slice(0, 0)
+	if len(sliced) != 0 {
+		t.Error(fmt.Sprintf("slice expected empty but got size %d", len(sliced)))
 	}
 }
 
@@ -110,6 +114,8 @@ func TestAppendList(t *testing.T) {
 	validateList(t, merged, 20000)
 	merged = createListForTest(1, 6000).AppendList(createListForTest(6001, 17758))
 	validateList(t, merged, 17758)
+	merged = createListForTest(1, 65).AppendList(createListForTest(66, 60000))
+	validateList(t, merged, 60000)
 }
 
 func TestSet(t *testing.T) {

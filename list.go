@@ -63,34 +63,61 @@ func (this listImpl) Append(value Object) List {
 }
 
 func (this listImpl) AppendList(other List) List {
-	otherImpl := other.(listImpl)
-
 	var answer List
-	thisHeight := this.root.maxCompleteHeight()
-	otherHeight := otherImpl.root.maxCompleteHeight()
-	if otherHeight < 1 {
+
+	otherImpl := other.(listImpl)
+	mergeHeight := computeMergeHeight(this.root, otherImpl.root)
+	if mergeHeight >= 1 {
+		newRoot := mergeLists(mergeHeight, this.root, otherImpl.root)
+		answer = listImpl{newRoot}
+	} else if this.root.size() > otherImpl.root.size() {
 		answer = this
 		other.ForEach(func(object Object) {
 			answer = answer.Append(object)
 		})
-	} else if thisHeight < 1 {
+	} else {
 		answer = other
 		index := 0
 		this.ForEach(func(object Object) {
 			answer = answer.Insert(index, object)
 			index++
 		})
-	} else {
-		commonHeight := minInt(thisHeight, otherHeight)
-		newRoot := mergeLists(commonHeight, this.root, otherImpl.root)
-		answer = listImpl{newRoot}
 	}
 	return answer
 }
 
+// cost based estimator to decide whether to use insert or merge to append a list
+func computeMergeHeight(this node, other node) int {
+	thisHeight := this.maxCompleteHeight()
+	otherHeight := other.maxCompleteHeight()
+	minHeight := minInt(thisHeight, otherHeight)
+	maxHeight := maxInt(thisHeight, otherHeight)
+	if minHeight <= 1 {
+		return 0
+	}
+
+	heightDiff := maxHeight - minHeight
+	branchEstimate := 1
+	branchFactor := minPerNode
+	for i := 1; i <= heightDiff; i++ {
+		branchEstimate += branchFactor
+		branchFactor *= minPerNode
+	}
+
+	smallerSize := minInt(this.size(), other.size())
+	insertEstimate := (1 + maxHeight) * smallerSize
+	if branchEstimate > insertEstimate {
+		return 0
+	} else {
+		return minHeight
+	}
+}
+
 func (this listImpl) Insert(indexBefore int, value Object) List {
 	currentSize := this.root.size()
-	if indexBefore >= currentSize {
+	if indexBefore < 0 || indexBefore > currentSize {
+		return nil
+	} else if indexBefore == currentSize {
 		return this.Append(value)
 	} else {
 		replacement, extra := this.root.insert(maxInt(0, indexBefore), value)
@@ -110,7 +137,7 @@ func listInsertImpl(replacement node, extra node) List {
 
 func (this listImpl) Delete(index int) List {
 	if index < 0 || index >= this.Size() {
-		return this
+		return nil
 	}
 	newRoot := this.root.delete(index)
 	return listImpl{newRoot}
