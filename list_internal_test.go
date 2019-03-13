@@ -54,6 +54,20 @@ func TestSlice(t *testing.T) {
 	}
 }
 
+func TestDelete(t *testing.T) {
+	list := createListForTest(1, 1024)
+	for i := 1023; i >= 0; i-- {
+		list = list.Delete(i)
+		validateList(t, list, i)
+	}
+	list = createListForTest(1, 512)
+	list = list.AppendList(createListForTest(1, 512))
+	for i := 1; i <= 512; i++ {
+		list = list.Delete(0)
+	}
+	validateList(t, list, 512)
+}
+
 func TestBuilder(t *testing.T) {
 	builder := CreateBuilder()
 	validateList(t, builder.Build(), 0)
@@ -98,6 +112,15 @@ func TestAppendList(t *testing.T) {
 	validateList(t, merged, 17758)
 }
 
+func TestSet(t *testing.T) {
+	list := createListForTest(90, 1090)
+	for i := 0; i < list.Size(); i++ {
+		list = list.Set(i, val(i+1))
+	}
+	list = list.Set(1001, val(1002))
+	validateList(t, list, 1002)
+}
+
 func createListForTest(firstValue int, lastValue int) List {
 	builder := CreateBuilder()
 	for i := firstValue; i <= lastValue; i++ {
@@ -124,7 +147,7 @@ func validateList(t *testing.T, list List, size int) {
 		expected := val(i + 1)
 		actual := list.Get(i)
 		if actual != expected {
-			t.Error(fmt.Sprintf("get expected %v/%s but got %v/%s", i, expected, i, expected))
+			t.Error(fmt.Sprintf("get expected %v/%s but got %v/%s", i, expected, i, actual))
 		}
 	}
 }

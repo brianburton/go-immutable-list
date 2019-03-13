@@ -21,6 +21,8 @@ type List interface {
 	Visit(offset int, limit int, v Visitor)
 	Select(predicate func(Object) bool) List
 	Slice(offset, limit int) []Object
+	Delete(index int) List
+	Set(index int, value Object) List
 }
 
 type node interface {
@@ -33,6 +35,10 @@ type node interface {
 	height() int
 	maxCompleteHeight() int
 	visitNodesOfHeight(targetHeight int, proc nodeProcessor)
+	isComplete() bool
+	mergeWith(other node) node
+	delete(index int) node
+	set(index int, value Object) node
 }
 
 type listImpl struct {
@@ -102,6 +108,14 @@ func listInsertImpl(replacement node, extra node) List {
 	}
 }
 
+func (this listImpl) Delete(index int) List {
+	if index < 0 || index >= this.Size() {
+		return this
+	}
+	newRoot := this.root.delete(index)
+	return listImpl{newRoot}
+}
+
 func (this listImpl) ForEach(proc Processor) {
 	this.root.forEach(proc)
 }
@@ -134,4 +148,17 @@ func (this listImpl) Slice(offset, limit int) []Object {
 		answer[index-offset] = obj
 	})
 	return answer
+}
+
+func (this listImpl) Set(index int, value Object) List {
+	size := this.Size()
+	if index < 0 || index > size {
+		return nil
+	}
+	if index == size {
+		return this.Append(value)
+	} else {
+		newRoot := this.root.set(index, value)
+		return listImpl{newRoot}
+	}
 }
