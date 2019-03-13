@@ -62,12 +62,12 @@ func (this listImpl) AppendList(other List) List {
 	var answer List
 	thisDepth := this.root.maxCompleteDepth()
 	otherDepth := otherImpl.root.maxCompleteDepth()
-	if otherDepth == 1 {
+	if otherDepth < 1 {
 		answer = this
 		other.ForEach(func(object Object) {
 			answer = answer.Append(object)
 		})
-	} else if thisDepth == 1 {
+	} else if thisDepth < 1 {
 		answer = other
 		index := 0
 		this.ForEach(func(object Object) {

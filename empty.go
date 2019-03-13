@@ -11,7 +11,7 @@ func (_ emptyNode) depth() int {
 }
 
 func (_ emptyNode) maxCompleteDepth() int {
-	return 1
+	return 0
 }
 
 func (_ emptyNode) size() int {

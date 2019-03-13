@@ -55,10 +55,17 @@ func (this leafNode) depth() int {
 }
 
 func (this leafNode) maxCompleteDepth() int {
-	return 1
+	if len(this.contents) >= minPerNode {
+		return 1
+	} else {
+		return 0
+	}
 }
 
 func (this leafNode) visitNodesOfDepth(targetDepth int, proc nodeProcessor) {
+	if targetDepth == 1 {
+		proc(this)
+	}
 }
 
 func insertObject(insertIndex int, extra Object, from []Object) []Object {
