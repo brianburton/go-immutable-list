@@ -129,12 +129,12 @@ func (this *branchBuilder) computeSize() int {
 	return answer
 }
 
-func mergeLists(depth int, root1 node, root2 node) node {
+func mergeLists(height int, root1 node, root2 node) node {
 	builder := createBranchBuilder()
 	proc := func(n node) {
 		builder.addNode(n)
 	}
-	root1.visitNodesOfDepth(depth, proc)
-	root2.visitNodesOfDepth(depth, proc)
+	root1.visitNodesOfHeight(height, proc)
+	root2.visitNodesOfHeight(height, proc)
 	return builder.buildForMerge()
 }

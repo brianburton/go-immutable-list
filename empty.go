@@ -3,14 +3,14 @@ package immutableList
 type emptyNode struct {
 }
 
-func (_ emptyNode) visitNodesOfDepth(targetDepth int, proc nodeProcessor) {
+func (_ emptyNode) visitNodesOfHeight(targetHeight int, proc nodeProcessor) {
 }
 
-func (_ emptyNode) depth() int {
+func (_ emptyNode) height() int {
 	return 1
 }
 
-func (_ emptyNode) maxCompleteDepth() int {
+func (_ emptyNode) maxCompleteHeight() int {
 	return 0
 }
 

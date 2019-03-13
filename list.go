@@ -30,9 +30,9 @@ type node interface {
 	insert(indexBefore int, value Object) (node, node)
 	forEach(proc Processor)
 	visit(start int, limit int, v Visitor)
-	depth() int
-	maxCompleteDepth() int
-	visitNodesOfDepth(targetDepth int, proc nodeProcessor)
+	height() int
+	maxCompleteHeight() int
+	visitNodesOfHeight(targetHeight int, proc nodeProcessor)
 }
 
 type listImpl struct {
@@ -60,14 +60,14 @@ func (this listImpl) AppendList(other List) List {
 	otherImpl := other.(listImpl)
 
 	var answer List
-	thisDepth := this.root.maxCompleteDepth()
-	otherDepth := otherImpl.root.maxCompleteDepth()
-	if otherDepth < 1 {
+	thisHeight := this.root.maxCompleteHeight()
+	otherHeight := otherImpl.root.maxCompleteHeight()
+	if otherHeight < 1 {
 		answer = this
 		other.ForEach(func(object Object) {
 			answer = answer.Append(object)
 		})
-	} else if thisDepth < 1 {
+	} else if thisHeight < 1 {
 		answer = other
 		index := 0
 		this.ForEach(func(object Object) {
@@ -75,8 +75,8 @@ func (this listImpl) AppendList(other List) List {
 			index++
 		})
 	} else {
-		commonDepth := minInt(thisDepth, otherDepth)
-		newRoot := mergeLists(commonDepth, this.root, otherImpl.root)
+		commonHeight := minInt(thisHeight, otherHeight)
+		newRoot := mergeLists(commonHeight, this.root, otherImpl.root)
 		answer = listImpl{newRoot}
 	}
 	return answer

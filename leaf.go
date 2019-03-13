@@ -50,11 +50,11 @@ func (this leafNode) visit(start int, limit int, v Visitor) {
 	}
 }
 
-func (this leafNode) depth() int {
+func (this leafNode) height() int {
 	return 1
 }
 
-func (this leafNode) maxCompleteDepth() int {
+func (this leafNode) maxCompleteHeight() int {
 	if len(this.contents) >= minPerNode {
 		return 1
 	} else {
@@ -62,8 +62,8 @@ func (this leafNode) maxCompleteDepth() int {
 	}
 }
 
-func (this leafNode) visitNodesOfDepth(targetDepth int, proc nodeProcessor) {
-	if targetDepth == 1 {
+func (this leafNode) visitNodesOfHeight(targetHeight int, proc nodeProcessor) {
+	if targetHeight == 1 {
 		proc(this)
 	}
 }

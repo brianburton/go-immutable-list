@@ -95,25 +95,25 @@ func (this branchNode) visit(start int, limit int, visitor Visitor) {
 	}
 }
 
-func (this branchNode) depth() int {
-	return 1 + this.children[0].depth()
+func (this branchNode) height() int {
+	return 1 + this.children[0].height()
 }
 
-func (this branchNode) maxCompleteDepth() int {
+func (this branchNode) maxCompleteHeight() int {
 	if len(this.children) >= minPerNode {
-		return this.depth()
+		return this.height()
 	} else {
-		return this.children[0].maxCompleteDepth()
+		return this.children[0].maxCompleteHeight()
 	}
 }
 
-func (this branchNode) visitNodesOfDepth(targetDepth int, proc nodeProcessor) {
-	myDepth := this.depth()
-	if myDepth == targetDepth {
+func (this branchNode) visitNodesOfHeight(targetHeight int, proc nodeProcessor) {
+	myHeight := this.height()
+	if myHeight == targetHeight {
 		proc(this)
-	} else if myDepth > targetDepth {
+	} else if myHeight > targetHeight {
 		for _, child := range this.children {
-			child.visitNodesOfDepth(targetDepth, proc)
+			child.visitNodesOfHeight(targetHeight, proc)
 		}
 	}
 }
