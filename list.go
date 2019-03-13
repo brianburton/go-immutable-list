@@ -63,27 +63,26 @@ func (this listImpl) Append(value Object) List {
 }
 
 func (this listImpl) AppendList(other List) List {
-	var answer List
-
 	otherImpl := other.(listImpl)
 	mergeHeight := computeMergeHeight(this.root, otherImpl.root)
 	if mergeHeight >= 1 {
 		newRoot := mergeLists(mergeHeight, this.root, otherImpl.root)
-		answer = listImpl{newRoot}
+		return listImpl{newRoot}
 	} else if this.root.size() > otherImpl.root.size() {
-		answer = this
+		var answer List = this
 		other.ForEach(func(object Object) {
 			answer = answer.Append(object)
 		})
+		return answer
 	} else {
-		answer = other
+		answer := other
 		index := 0
 		this.ForEach(func(object Object) {
 			answer = answer.Insert(index, object)
 			index++
 		})
+		return answer
 	}
-	return answer
 }
 
 // cost based estimator to decide whether to use insert or merge to append a list
