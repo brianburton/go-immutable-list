@@ -7,14 +7,14 @@ type leafNode struct {
 func createLeafNode(objectBuffer []Object, count int) node {
 	contents := make([]Object, count)
 	copy(contents, objectBuffer)
-	return leafNode{contents}
+	return &leafNode{contents}
 }
 
-func (this leafNode) size() int {
+func (this *leafNode) size() int {
 	return len(this.contents)
 }
 
-func (this leafNode) get(index int) Object {
+func (this *leafNode) get(index int) Object {
 	if index >= 0 && index < len(this.contents) {
 		return this.contents[index]
 	} else {
@@ -22,44 +22,44 @@ func (this leafNode) get(index int) Object {
 	}
 }
 
-func (this leafNode) append(value Object) (node, node) {
+func (this *leafNode) append(value Object) (node, node) {
 	return this.insert(len(this.contents), value)
 }
 
-func (this leafNode) insert(indexBefore int, value Object) (node, node) {
+func (this *leafNode) insert(indexBefore int, value Object) (node, node) {
 	currentSize := len(this.contents)
 	if currentSize < maxPerNode {
-		return leafNode{contents: insertObject(indexBefore, value, this.contents)}, nil
+		return &leafNode{contents: insertObject(indexBefore, value, this.contents)}, nil
 	} else {
 		first, second := splitInsertObject(indexBefore, value, this.contents)
-		return leafNode{contents: first}, leafNode{contents: second}
+		return &leafNode{contents: first}, &leafNode{contents: second}
 	}
 }
 
-func (this leafNode) set(index int, value Object) node {
+func (this *leafNode) set(index int, value Object) node {
 	newContents := make([]Object, len(this.contents))
 	copy(newContents, this.contents)
 	newContents[index] = value
-	return leafNode{newContents}
+	return &leafNode{newContents}
 }
 
-func (this leafNode) forEach(proc Processor) {
+func (this *leafNode) forEach(proc Processor) {
 	for _, value := range this.contents {
 		proc(value)
 	}
 }
 
-func (this leafNode) visit(start int, limit int, v Visitor) {
+func (this *leafNode) visit(start int, limit int, v Visitor) {
 	for i := start; i < limit; i++ {
 		v(i, this.contents[i])
 	}
 }
 
-func (this leafNode) height() int {
+func (this *leafNode) height() int {
 	return 1
 }
 
-func (this leafNode) maxCompleteHeight() int {
+func (this *leafNode) maxCompleteHeight() int {
 	if this.isComplete() {
 		return 1
 	} else {
@@ -67,7 +67,7 @@ func (this leafNode) maxCompleteHeight() int {
 	}
 }
 
-func (this leafNode) visitNodesOfHeight(targetHeight int, proc nodeProcessor) {
+func (this *leafNode) visitNodesOfHeight(targetHeight int, proc nodeProcessor) {
 	if targetHeight == 1 {
 		proc(this)
 	}
@@ -93,29 +93,29 @@ func splitInsertObject(insertIndex int, extra Object, from []Object) ([]Object, 
 	return first, second
 }
 
-func (this leafNode) isComplete() bool {
+func (this *leafNode) isComplete() bool {
 	return len(this.contents) >= minPerNode
 }
 
-func (this leafNode) mergeWith(other node) node {
-	otherLeaf := other.(leafNode)
+func (this *leafNode) mergeWith(other node) node {
+	otherLeaf := other.(*leafNode)
 	myLen := len(this.contents)
 	otherLen := len(otherLeaf.contents)
 	newLen := myLen + otherLen
 	newContents := make([]Object, newLen)
 	copy(newContents[0:], this.contents)
 	copy(newContents[myLen:], otherLeaf.contents)
-	return leafNode{newContents}
+	return &leafNode{newContents}
 }
 
-func (this leafNode) delete(index int) node {
+func (this *leafNode) delete(index int) node {
 	oldLen := len(this.contents)
 	if oldLen == 1 {
-		return emptyNode{}
+		return &emptyNode{}
 	} else {
 		newContents := make([]Object, oldLen-1)
 		copy(newContents[0:], this.contents[0:index])
 		copy(newContents[index:], this.contents[index+1:])
-		return leafNode{newContents}
+		return &leafNode{newContents}
 	}
 }

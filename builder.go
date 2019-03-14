@@ -23,20 +23,20 @@ type branchBuilder struct {
 }
 
 func CreateBuilder() Builder {
-	return builderImpl{createLeafBuilder()}
+	return &builderImpl{createLeafBuilder()}
 }
 
-func (this builderImpl) Add(value Object) Builder {
+func (this *builderImpl) Add(value Object) Builder {
 	this.leaves.addValue(value)
 	return this
 }
 
-func (this builderImpl) Size() int {
+func (this *builderImpl) Size() int {
 	return this.leaves.computeSize()
 }
 
-func (this builderImpl) Build() List {
-	return listImpl{this.leaves.build()}
+func (this *builderImpl) Build() List {
+	return &listImpl{this.leaves.build()}
 }
 
 func createLeafBuilder() *leafBuilder {
@@ -60,7 +60,7 @@ func (this *leafBuilder) addValue(value Object) {
 
 func (this *leafBuilder) build() node {
 	if this.count == 0 {
-		return emptyNode{}
+		return &emptyNode{}
 	} else if this.parent == nil {
 		return createLeafNode(this.buffer, this.count)
 	} else {

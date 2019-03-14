@@ -46,28 +46,28 @@ type listImpl struct {
 }
 
 func Create() List {
-	return listImpl{root: emptyNode{}}
+	return &listImpl{root: &emptyNode{}}
 }
 
-func (this listImpl) Size() int {
+func (this *listImpl) Size() int {
 	return this.root.size()
 }
 
-func (this listImpl) Get(index int) Object {
+func (this *listImpl) Get(index int) Object {
 	return this.root.get(index)
 }
 
-func (this listImpl) Append(value Object) List {
+func (this *listImpl) Append(value Object) List {
 	replacement, extra := this.root.append(value)
 	return listInsertImpl(replacement, extra)
 }
 
-func (this listImpl) AppendList(other List) List {
-	otherImpl := other.(listImpl)
+func (this *listImpl) AppendList(other List) List {
+	otherImpl := other.(*listImpl)
 	mergeHeight := computeMergeHeight(this.root, otherImpl.root)
 	if mergeHeight >= 1 {
 		newRoot := mergeLists(mergeHeight, this.root, otherImpl.root)
-		return listImpl{newRoot}
+		return &listImpl{newRoot}
 	} else if this.root.size() > otherImpl.root.size() {
 		var answer List = this
 		other.ForEach(func(object Object) {
@@ -112,7 +112,7 @@ func computeMergeHeight(this node, other node) int {
 	}
 }
 
-func (this listImpl) Insert(indexBefore int, value Object) List {
+func (this *listImpl) Insert(indexBefore int, value Object) List {
 	currentSize := this.root.size()
 	if indexBefore < 0 || indexBefore > currentSize {
 		return nil
@@ -126,33 +126,33 @@ func (this listImpl) Insert(indexBefore int, value Object) List {
 
 func listInsertImpl(replacement node, extra node) List {
 	if extra == nil {
-		return listImpl{root: replacement}
+		return &listImpl{root: replacement}
 	} else {
 		children := []node{replacement, extra}
 		totalSize := replacement.size() + extra.size()
-		return listImpl{root: branchNode{children: children, totalSize: totalSize}}
+		return &listImpl{root: &branchNode{children: children, totalSize: totalSize}}
 	}
 }
 
-func (this listImpl) Delete(index int) List {
+func (this *listImpl) Delete(index int) List {
 	if index < 0 || index >= this.Size() {
 		return nil
 	}
 	newRoot := this.root.delete(index)
-	return listImpl{newRoot}
+	return &listImpl{newRoot}
 }
 
-func (this listImpl) ForEach(proc Processor) {
+func (this *listImpl) ForEach(proc Processor) {
 	this.root.forEach(proc)
 }
 
-func (this listImpl) Visit(offset int, limit int, visitor Visitor) {
+func (this *listImpl) Visit(offset int, limit int, visitor Visitor) {
 	offset = maxInt(0, offset)
 	limit = minInt(limit, this.root.size())
 	this.root.visit(offset, limit, visitor)
 }
 
-func (this listImpl) Select(predicate func(Object) bool) List {
+func (this *listImpl) Select(predicate func(Object) bool) List {
 	answer := Create()
 	this.root.forEach(func(obj Object) {
 		if predicate(obj) {
@@ -162,7 +162,7 @@ func (this listImpl) Select(predicate func(Object) bool) List {
 	return answer
 }
 
-func (this listImpl) Slice(offset, limit int) []Object {
+func (this *listImpl) Slice(offset, limit int) []Object {
 	if offset < 0 || limit < offset || limit > this.Size() {
 		return nil
 	}
@@ -176,7 +176,7 @@ func (this listImpl) Slice(offset, limit int) []Object {
 	return answer
 }
 
-func (this listImpl) Set(index int, value Object) List {
+func (this *listImpl) Set(index int, value Object) List {
 	size := this.Size()
 	if index < 0 || index > size {
 		return nil
@@ -185,6 +185,6 @@ func (this listImpl) Set(index int, value Object) List {
 		return this.Append(value)
 	} else {
 		newRoot := this.root.set(index, value)
-		return listImpl{newRoot}
+		return &listImpl{newRoot}
 	}
 }
