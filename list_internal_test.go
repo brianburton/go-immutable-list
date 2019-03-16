@@ -118,6 +118,21 @@ func TestAppendList(t *testing.T) {
 	validateList(t, merged, 60000)
 }
 
+func TestIterator(t *testing.T) {
+	for length := 0; length <= 1024; length++ {
+		actual := copyList(createListForTest(1, length))
+		validateList(t, actual, length)
+	}
+}
+
+func copyList(list List) List {
+	answer := Create()
+	for i := list.FwdIterate(); i.Next(); {
+		answer = answer.Append(i.Get())
+	}
+	return answer
+}
+
 func TestSet(t *testing.T) {
 	list := createListForTest(90, 1090)
 	for i := 0; i < list.Size(); i++ {

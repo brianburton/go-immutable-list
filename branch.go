@@ -5,6 +5,19 @@ type branchNode struct {
 	totalSize int
 }
 
+func (this *branchNode) next(state *iterator_state) (*iterator_state, Object) {
+	if state == nil || state.currentNode != this {
+		state = &iterator_state{currentNode: this, next: state}
+	}
+	child := this.children[state.currentIndex]
+	state.currentIndex++
+	if state.currentIndex == len(this.children) {
+		return child.next(state.next)
+	} else {
+		return child.next(state)
+	}
+}
+
 func createBranchNode(nodeBuffer []node, count int) node {
 	children := make([]node, count)
 	copy(children, nodeBuffer)

@@ -49,3 +49,7 @@ func (_ *emptyNode) mergeWith(other node) node {
 func (this *emptyNode) delete(index int) node {
 	return this
 }
+
+func (_ *emptyNode) next(state *iterator_state) (*iterator_state, Object) {
+	return nil, nil
+}

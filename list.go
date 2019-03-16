@@ -10,6 +10,16 @@ type Object interface{}
 type Processor func(Object)
 type Visitor func(int, Object)
 type nodeProcessor func(node)
+type iterator_state struct {
+	next         *iterator_state
+	currentNode  node
+	currentIndex int
+}
+
+type Iterator interface {
+	Next() bool
+	Get() Object
+}
 
 type List interface {
 	Size() int
@@ -23,6 +33,7 @@ type List interface {
 	Slice(offset, limit int) []Object
 	Delete(index int) List
 	Set(index int, value Object) List
+	FwdIterate() Iterator
 }
 
 type node interface {
@@ -39,10 +50,42 @@ type node interface {
 	mergeWith(other node) node
 	delete(index int) node
 	set(index int, value Object) node
+	next(state *iterator_state) (*iterator_state, Object)
 }
 
 type listImpl struct {
 	root node
+}
+
+type iteratorImpl struct {
+	state *iterator_state
+	value Object
+}
+
+func (this *listImpl) FwdIterate() Iterator {
+	var state *iterator_state
+	if this.root.size() == 0 {
+		state = nil
+	} else {
+		state = &iterator_state{currentNode: this.root}
+	}
+	return &iteratorImpl{state: state}
+}
+
+func (this *iteratorImpl) Next() bool {
+	if this.state == nil {
+		return false
+	}
+	this.state, this.value = this.state.currentNode.next(this.state)
+	return true
+}
+
+func (this *iteratorImpl) Get() Object {
+	return this.value
+}
+
+func (this *listImpl) CreateIterator() Iterator {
+	return &iteratorImpl{state: &iterator_state{currentNode: this.root}}
 }
 
 func Create() List {
