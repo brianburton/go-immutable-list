@@ -192,13 +192,13 @@ func (this *listImpl) Visit(offset int, limit int, visitor Visitor) {
 }
 
 func (this *listImpl) Select(predicate func(Object) bool) List {
-	answer := Create()
+	answer := CreateBuilder()
 	this.root.forEach(func(obj Object) {
 		if predicate(obj) {
-			answer = answer.Append(obj)
+			answer.Add(obj)
 		}
 	})
-	return answer
+	return answer.Build()
 }
 
 func (this *listImpl) Slice(offset, limit int) []Object {
