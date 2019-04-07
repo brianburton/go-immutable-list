@@ -50,6 +50,6 @@ func (this *emptyNode) delete(index int) node {
 	return this
 }
 
-func (_ *emptyNode) next(state *iterator_state) (*iterator_state, Object) {
+func (_ *emptyNode) next(state *iteratorState) (*iteratorState, Object) {
 	return nil, nil
 }

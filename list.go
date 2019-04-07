@@ -10,8 +10,8 @@ type Object interface{}
 type Processor func(Object)
 type Visitor func(int, Object)
 type nodeProcessor func(node)
-type iterator_state struct {
-	next         *iterator_state
+type iteratorState struct {
+	next         *iteratorState
 	currentNode  node
 	currentIndex int
 }
@@ -50,7 +50,7 @@ type node interface {
 	mergeWith(other node) node
 	delete(index int) node
 	set(index int, value Object) node
-	next(state *iterator_state) (*iterator_state, Object)
+	next(state *iteratorState) (*iteratorState, Object)
 }
 
 type listImpl struct {
@@ -58,16 +58,16 @@ type listImpl struct {
 }
 
 type iteratorImpl struct {
-	state *iterator_state
+	state *iteratorState
 	value Object
 }
 
 func (this *listImpl) FwdIterate() Iterator {
-	var state *iterator_state
+	var state *iteratorState
 	if this.root.size() == 0 {
 		state = nil
 	} else {
-		state = &iterator_state{currentNode: this.root}
+		state = &iteratorState{currentNode: this.root}
 	}
 	return &iteratorImpl{state: state}
 }
@@ -82,10 +82,6 @@ func (this *iteratorImpl) Next() bool {
 
 func (this *iteratorImpl) Get() Object {
 	return this.value
-}
-
-func (this *listImpl) CreateIterator() Iterator {
-	return &iteratorImpl{state: &iterator_state{currentNode: this.root}}
 }
 
 func Create() List {

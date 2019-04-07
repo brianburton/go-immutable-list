@@ -5,9 +5,9 @@ type branchNode struct {
 	totalSize int
 }
 
-func (this *branchNode) next(state *iterator_state) (*iterator_state, Object) {
+func (this *branchNode) next(state *iteratorState) (*iteratorState, Object) {
 	if state == nil || state.currentNode != this {
-		state = &iterator_state{currentNode: this, next: state}
+		state = &iteratorState{currentNode: this, next: state}
 	}
 	child := this.children[state.currentIndex]
 	state.currentIndex++

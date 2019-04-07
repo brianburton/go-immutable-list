@@ -120,9 +120,9 @@ func (this *leafNode) delete(index int) node {
 	}
 }
 
-func (this *leafNode) next(state *iterator_state) (*iterator_state, Object) {
+func (this *leafNode) next(state *iteratorState) (*iteratorState, Object) {
 	if state == nil || state.currentNode != this {
-		state = &iterator_state{currentNode: this, next: state}
+		state = &iteratorState{currentNode: this, next: state}
 	}
 	value := this.contents[state.currentIndex]
 	state.currentIndex++
