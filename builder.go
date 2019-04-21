@@ -67,7 +67,7 @@ func (this *leafBuilder) addValue(value Object) {
 
 func (this *leafBuilder) build() node {
 	if this.count == 0 {
-		return &emptyNode{}
+		return sharedEmptyInstance
 	} else if this.parent == nil {
 		return this.createLeafNodeOfLength(this.count)
 	} else {

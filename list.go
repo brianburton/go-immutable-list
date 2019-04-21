@@ -86,7 +86,7 @@ func (this *iteratorImpl) Get() Object {
 }
 
 func Create() List {
-	return &listImpl{root: &emptyNode{}}
+	return &listImpl{root: sharedEmptyInstance}
 }
 
 func (this *listImpl) Size() int {

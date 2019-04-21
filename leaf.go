@@ -105,7 +105,7 @@ func (this *leafNode) mergeWith(other node) node {
 func (this *leafNode) delete(index int) node {
 	oldLen := len(this.contents)
 	if oldLen == 1 {
-		return &emptyNode{}
+		return sharedEmptyInstance
 	} else {
 		newContents := make([]Object, oldLen-1)
 		copy(newContents[0:], this.contents[0:index])

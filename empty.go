@@ -5,6 +5,8 @@ import "fmt"
 type emptyNode struct {
 }
 
+var sharedEmptyInstance node = &emptyNode{}
+
 func (_ *emptyNode) height() int {
 	return 1
 }
