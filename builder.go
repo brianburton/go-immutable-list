@@ -19,6 +19,7 @@ type leafBuilder struct {
 type branchBuilder struct {
 	parent *branchBuilder
 	count  int
+	height int
 	buffer []node
 }
 
@@ -50,7 +51,7 @@ func (this *leafBuilder) addValue(value Object) {
 	this.count++
 	if this.count == maxPerNode {
 		if this.parent == nil {
-			this.parent = createBranchBuilder()
+			this.parent = createBranchBuilder(2)
 		}
 		this.parent.addNode(createLeafNode(this.buffer, minPerNode))
 		copy(this.buffer[0:], this.buffer[minPerNode:this.count])
@@ -76,10 +77,8 @@ func (this *leafBuilder) computeSize() int {
 	return answer
 }
 
-func createBranchBuilder() *branchBuilder {
-	var answer branchBuilder
-	answer.buffer = make([]node, maxPerNode)
-	return &answer
+func createBranchBuilder(height int) *branchBuilder {
+	return &branchBuilder{buffer: make([]node, maxPerNode), height: height}
 }
 
 func (this *branchBuilder) addNode(node node) {
@@ -87,7 +86,7 @@ func (this *branchBuilder) addNode(node node) {
 	this.count++
 	if this.count == maxPerNode {
 		if this.parent == nil {
-			this.parent = createBranchBuilder()
+			this.parent = createBranchBuilder(this.height + 1)
 		}
 		this.parent.addNode(this.createBranchNodeOfLength(minPerNode))
 		copy(this.buffer[0:], this.buffer[minPerNode:this.count])
@@ -120,6 +119,6 @@ func (this *branchBuilder) createBranchNodeOfLength(count int) node {
 	children := make([]node, count)
 	copy(children, this.buffer)
 	nodeSize := computeNodeSize(children)
-	nodeHeight := this.buffer[0].height() + 1
+	nodeHeight := this.height
 	return createBranchNode(children, nodeSize, nodeHeight)
 }
