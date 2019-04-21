@@ -89,7 +89,7 @@ func (this *branchBuilder) addNode(node node) {
 		if this.parent == nil {
 			this.parent = createBranchBuilder()
 		}
-		this.parent.addNode(this.createBranchNodeCopyingFromBuffer(minPerNode))
+		this.parent.addNode(this.createBranchNodeOfLength(minPerNode))
 		copy(this.buffer[0:], this.buffer[minPerNode:this.count])
 		this.count -= minPerNode
 	}
@@ -98,16 +98,7 @@ func (this *branchBuilder) addNode(node node) {
 func (this *branchBuilder) build(extra node) node {
 	this.buffer[this.count] = extra
 	var answer node
-	answer = this.createBranchNodeCopyingFromBuffer(this.count + 1)
-	if this.parent != nil {
-		answer = this.parent.build(answer)
-	}
-	return answer
-}
-
-func (this *branchBuilder) buildForMerge() node {
-	var answer node
-	answer = this.createBranchNodeCopyingFromBuffer(this.count)
+	answer = this.createBranchNodeOfLength(this.count + 1)
 	if this.parent != nil {
 		answer = this.parent.build(answer)
 	}
@@ -125,7 +116,7 @@ func (this *branchBuilder) computeSize() int {
 	return answer
 }
 
-func (this *branchBuilder) createBranchNodeCopyingFromBuffer(count int) node {
+func (this *branchBuilder) createBranchNodeOfLength(count int) node {
 	children := make([]node, count)
 	copy(children, this.buffer)
 	nodeSize := computeNodeSize(children)
