@@ -46,6 +46,12 @@ func createLeafBuilder() *leafBuilder {
 	return &answer
 }
 
+func (this *leafBuilder) createLeafNodeOfLength(count int) node {
+	contents := make([]Object, count)
+	copy(contents, this.buffer)
+	return createLeafNode(contents)
+}
+
 func (this *leafBuilder) addValue(value Object) {
 	this.buffer[this.count] = value
 	this.count++
@@ -53,7 +59,7 @@ func (this *leafBuilder) addValue(value Object) {
 		if this.parent == nil {
 			this.parent = createBranchBuilder(2)
 		}
-		this.parent.addNode(createLeafNode(this.buffer, minPerNode))
+		this.parent.addNode(this.createLeafNodeOfLength(minPerNode))
 		copy(this.buffer[0:], this.buffer[minPerNode:this.count])
 		this.count -= minPerNode
 	}
@@ -63,9 +69,9 @@ func (this *leafBuilder) build() node {
 	if this.count == 0 {
 		return &emptyNode{}
 	} else if this.parent == nil {
-		return createLeafNode(this.buffer, this.count)
+		return this.createLeafNodeOfLength(this.count)
 	} else {
-		return this.parent.build(createLeafNode(this.buffer, this.count))
+		return this.parent.build(this.createLeafNodeOfLength(this.count))
 	}
 }
 

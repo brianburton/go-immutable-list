@@ -19,7 +19,7 @@ func (_ *emptyNode) get(index int) Object {
 }
 
 func (_ *emptyNode) append(value Object) (node, node) {
-	return &leafNode{contents: []Object{value}}, nil
+	return createLeafNode([]Object{value}), nil
 }
 
 func (_ *emptyNode) appendNode(other node) (node, node) {
@@ -31,7 +31,7 @@ func (_ *emptyNode) prependNode(other node) (node, node) {
 }
 
 func (_ *emptyNode) insert(_ int, value Object) (node, node) {
-	return &leafNode{contents: []Object{value}}, nil
+	return createLeafNode([]Object{value}), nil
 }
 
 func (this *emptyNode) set(index int, value Object) node {

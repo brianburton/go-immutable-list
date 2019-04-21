@@ -4,9 +4,7 @@ type leafNode struct {
 	contents []Object
 }
 
-func createLeafNode(objectBuffer []Object, count int) node {
-	contents := make([]Object, count)
-	copy(contents, objectBuffer)
+func createLeafNode(contents []Object) node {
 	return &leafNode{contents}
 }
 
@@ -37,10 +35,10 @@ func (this *leafNode) prependNode(other node) (node, node) {
 func (this *leafNode) insert(indexBefore int, value Object) (node, node) {
 	currentSize := len(this.contents)
 	if currentSize < maxPerNode {
-		return &leafNode{contents: insertObject(indexBefore, value, this.contents)}, nil
+		return createLeafNode(insertObject(indexBefore, value, this.contents)), nil
 	} else {
 		first, second := splitInsertObject(indexBefore, value, this.contents)
-		return &leafNode{contents: first}, &leafNode{contents: second}
+		return createLeafNode(first), createLeafNode(second)
 	}
 }
 
@@ -48,7 +46,7 @@ func (this *leafNode) set(index int, value Object) node {
 	newContents := make([]Object, len(this.contents))
 	copy(newContents, this.contents)
 	newContents[index] = value
-	return &leafNode{newContents}
+	return createLeafNode(newContents)
 }
 
 func (this *leafNode) forEach(proc Processor) {
@@ -105,7 +103,7 @@ func (this *leafNode) mergeWith(other node) node {
 	newContents := make([]Object, newLen)
 	copy(newContents[0:], this.contents)
 	copy(newContents[myLen:], otherLeaf.contents)
-	return &leafNode{newContents}
+	return createLeafNode(newContents)
 }
 
 func (this *leafNode) delete(index int) node {
@@ -116,7 +114,7 @@ func (this *leafNode) delete(index int) node {
 		newContents := make([]Object, oldLen-1)
 		copy(newContents[0:], this.contents[0:index])
 		copy(newContents[index:], this.contents[index+1:])
-		return &leafNode{newContents}
+		return createLeafNode(newContents)
 	}
 }
 
@@ -141,7 +139,7 @@ func appendNodeImpl(a *leafNode, b *leafNode) (node, node) {
 		newContents := make([]Object, newLen)
 		copy(newContents[0:], a.contents)
 		copy(newContents[myLen:], b.contents)
-		return &leafNode{newContents}, nil
+		return createLeafNode(newContents), nil
 	} else {
 		newContents := make([]Object, newLen)
 		copy(newContents[0:], a.contents)
@@ -150,6 +148,6 @@ func appendNodeImpl(a *leafNode, b *leafNode) (node, node) {
 		second := make([]Object, newLen-minPerNode)
 		copy(first[0:], newContents[0:minPerNode])
 		copy(second[0:], newContents[minPerNode:])
-		return &leafNode{first}, &leafNode{second}
+		return createLeafNode(first), createLeafNode(second)
 	}
 }
