@@ -47,7 +47,6 @@ type node interface {
 	forEach(proc Processor)
 	visit(start int, limit int, v Visitor)
 	height() int
-	maxCompleteHeight() int
 	visitNodesOfHeight(targetHeight int, proc nodeProcessor)
 	isComplete() bool
 	mergeWith(other node) node

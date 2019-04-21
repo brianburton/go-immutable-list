@@ -67,14 +67,6 @@ func (this *leafNode) height() int {
 	return 1
 }
 
-func (this *leafNode) maxCompleteHeight() int {
-	if this.isComplete() {
-		return 1
-	} else {
-		return 0
-	}
-}
-
 func (this *leafNode) visitNodesOfHeight(targetHeight int, proc nodeProcessor) {
 	if targetHeight == 1 {
 		proc(this)

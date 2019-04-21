@@ -10,10 +10,6 @@ func (_ *emptyNode) height() int {
 	return 1
 }
 
-func (_ *emptyNode) maxCompleteHeight() int {
-	return 0
-}
-
 func (_ *emptyNode) size() int {
 	return 0
 }

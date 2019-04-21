@@ -147,14 +147,6 @@ func (this *branchNode) height() int {
 	return this.nodeHeight
 }
 
-func (this *branchNode) maxCompleteHeight() int {
-	if this.isComplete() {
-		return this.height()
-	} else {
-		return this.children[0].maxCompleteHeight()
-	}
-}
-
 func (this *branchNode) visitNodesOfHeight(targetHeight int, proc nodeProcessor) {
 	myHeight := this.height()
 	if myHeight == targetHeight {
