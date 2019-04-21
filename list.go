@@ -142,8 +142,9 @@ func listInsertImpl(replacement node, extra node) List {
 		return &listImpl{root: replacement}
 	} else {
 		children := []node{replacement, extra}
-		totalSize := replacement.size() + extra.size()
-		return &listImpl{root: &branchNode{children: children, totalSize: totalSize}}
+		nodeSize := replacement.size() + extra.size()
+		nodeHeight := replacement.height() + 1
+		return &listImpl{root: createBranchNode(children, nodeSize, nodeHeight)}
 	}
 }
 

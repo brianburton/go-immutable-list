@@ -3,8 +3,9 @@ package immutableList
 import "fmt"
 
 type branchNode struct {
-	children  []node
-	totalSize int
+	children   []node
+	nodeSize   int
+	nodeHeight int
 }
 
 func (this *branchNode) next(state *iteratorState) (*iteratorState, Object) {
@@ -20,15 +21,12 @@ func (this *branchNode) next(state *iteratorState) (*iteratorState, Object) {
 	}
 }
 
-func createBranchNode(nodeBuffer []node, count int) node {
-	children := make([]node, count)
-	copy(children, nodeBuffer)
-	totalSize := computeNodeSize(children)
-	return &branchNode{children, totalSize}
+func createBranchNode(children []node, nodeSize int, nodeHeight int) node {
+	return &branchNode{children, nodeSize, nodeHeight}
 }
 
 func (this *branchNode) size() int {
-	return this.totalSize
+	return this.nodeSize
 }
 
 func (this *branchNode) get(index int) Object {
@@ -68,7 +66,7 @@ func (this *branchNode) appendNode(other node) (node, node) {
 			children[newLen-1] = extra
 		}
 	}
-	return splitIfNecessary(children, this.size()+other.size())
+	return splitIfNecessary(children, this.size()+other.size(), this.nodeHeight)
 }
 
 func (this *branchNode) prependNode(other node) (node, node) {
@@ -97,19 +95,19 @@ func (this *branchNode) prependNode(other node) (node, node) {
 			copy(children[2:], this.children[1:])
 		}
 	}
-	return splitIfNecessary(children, this.size()+other.size())
+	return splitIfNecessary(children, this.size()+other.size(), this.nodeHeight)
 }
 
 func (this *branchNode) append(value Object) (node, node) {
 	lastIndex := len(this.children) - 1
 	replacement, extra := this.children[lastIndex].append(value)
-	return replaceImpl(this.totalSize, this.children, lastIndex, replacement, extra)
+	return replaceImpl(this.nodeSize, this.nodeHeight, this.children, lastIndex, replacement, extra)
 }
 
 func (this *branchNode) insert(indexBefore int, value Object) (node, node) {
 	childIndex, childOffset := findChildForIndex(indexBefore, this.children)
 	replacement, extra := this.children[childIndex].insert(childOffset, value)
-	return replaceImpl(this.totalSize, this.children, childIndex, replacement, extra)
+	return replaceImpl(this.nodeSize, this.nodeHeight, this.children, childIndex, replacement, extra)
 }
 
 func (this *branchNode) set(index int, value Object) node {
@@ -118,7 +116,7 @@ func (this *branchNode) set(index int, value Object) node {
 	newChildren := make([]node, len(this.children))
 	copy(newChildren, this.children)
 	newChildren[childIndex] = newNode
-	return &branchNode{newChildren, this.totalSize}
+	return createBranchNode(newChildren, this.nodeSize, this.nodeHeight)
 }
 
 func (this *branchNode) forEach(proc Processor) {
@@ -146,7 +144,7 @@ func (this *branchNode) visit(start int, limit int, visitor Visitor) {
 }
 
 func (this *branchNode) height() int {
-	return 1 + this.children[0].height()
+	return this.nodeHeight
 }
 
 func (this *branchNode) maxCompleteHeight() int {
@@ -179,8 +177,8 @@ func (this *branchNode) mergeWith(other node) node {
 	newChildren := make([]node, myLen+otherLen)
 	copy(newChildren[0:], this.children)
 	copy(newChildren[myLen:], otherBranch.children)
-	newTotalSize := this.totalSize + otherBranch.totalSize
-	return &branchNode{newChildren, newTotalSize}
+	newTotalSize := this.nodeSize + otherBranch.nodeSize
+	return createBranchNode(newChildren, newTotalSize, this.nodeHeight)
 }
 
 func (this *branchNode) delete(index int) node {
@@ -208,7 +206,7 @@ func (this *branchNode) delete(index int) node {
 	if len(newChildren) == 1 {
 		return newChildren[0]
 	} else {
-		return &branchNode{newChildren, computeNodeSize(newChildren)}
+		return createBranchNode(newChildren, computeNodeSize(newChildren), this.nodeHeight)
 	}
 }
 
@@ -225,7 +223,7 @@ func findChildForIndex(indexBefore int, children []node) (childIndex int, childO
 	return childIndex, indexBefore - childStart
 }
 
-func replaceImpl(totalSize int, oldChildren []node, replaceIndex int, replacement node, extra node) (node, node) {
+func replaceImpl(oldSize int, nodeHeight int, oldChildren []node, replaceIndex int, replacement node, extra node) (node, node) {
 	var newChildren []node
 	oldLen := len(oldChildren)
 	if extra == nil {
@@ -239,13 +237,13 @@ func replaceImpl(totalSize int, oldChildren []node, replaceIndex int, replacemen
 		newChildren[replaceIndex+1] = extra
 		copy(newChildren[replaceIndex+2:], oldChildren[replaceIndex+1:])
 	}
-	return splitIfNecessary(newChildren, totalSize+1)
+	return splitIfNecessary(newChildren, oldSize+1, nodeHeight)
 }
 
-func splitIfNecessary(newChildren []node, totalSize int) (node, node) {
+func splitIfNecessary(newChildren []node, nodeSize int, nodeHeight int) (node, node) {
 	newLen := len(newChildren)
 	if newLen <= maxPerNode {
-		return &branchNode{newChildren, totalSize}, nil
+		return createBranchNode(newChildren, nodeSize, nodeHeight), nil
 	} else {
 		firstLen := newLen / 2
 		secondLen := newLen - firstLen
@@ -253,7 +251,7 @@ func splitIfNecessary(newChildren []node, totalSize int) (node, node) {
 		second := make([]node, secondLen)
 		copy(first, newChildren[0:])
 		copy(second, newChildren[firstLen:])
-		return &branchNode{first, computeNodeSize(first)}, &branchNode{second, computeNodeSize(second)}
+		return createBranchNode(first, computeNodeSize(first), nodeHeight), createBranchNode(second, computeNodeSize(second), nodeHeight)
 	}
 }
 

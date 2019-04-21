@@ -89,7 +89,7 @@ func (this *branchBuilder) addNode(node node) {
 		if this.parent == nil {
 			this.parent = createBranchBuilder()
 		}
-		this.parent.addNode(createBranchNode(this.buffer, minPerNode))
+		this.parent.addNode(createBranchNodeCopyingFromBuffer(this.buffer, minPerNode))
 		copy(this.buffer[0:], this.buffer[minPerNode:this.count])
 		this.count -= minPerNode
 	}
@@ -98,7 +98,7 @@ func (this *branchBuilder) addNode(node node) {
 func (this *branchBuilder) build(extra node) node {
 	this.buffer[this.count] = extra
 	var answer node
-	answer = createBranchNode(this.buffer, this.count+1)
+	answer = createBranchNodeCopyingFromBuffer(this.buffer, this.count+1)
 	if this.parent != nil {
 		answer = this.parent.build(answer)
 	}
@@ -107,7 +107,7 @@ func (this *branchBuilder) build(extra node) node {
 
 func (this *branchBuilder) buildForMerge() node {
 	var answer node
-	answer = createBranchNode(this.buffer, this.count)
+	answer = createBranchNodeCopyingFromBuffer(this.buffer, this.count)
 	if this.parent != nil {
 		answer = this.parent.build(answer)
 	}
@@ -125,12 +125,10 @@ func (this *branchBuilder) computeSize() int {
 	return answer
 }
 
-func mergeLists(height int, root1 node, root2 node) node {
-	builder := createBranchBuilder()
-	proc := func(n node) {
-		builder.addNode(n)
-	}
-	root1.visitNodesOfHeight(height, proc)
-	root2.visitNodesOfHeight(height, proc)
-	return builder.buildForMerge()
+func createBranchNodeCopyingFromBuffer(nodeBuffer []node, count int) node {
+	children := make([]node, count)
+	copy(children, nodeBuffer)
+	nodeSize := computeNodeSize(children)
+	nodeHeight := nodeBuffer[0].height() + 1
+	return createBranchNode(children, nodeSize, nodeHeight)
 }
