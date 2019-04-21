@@ -26,6 +26,14 @@ func (this *leafNode) append(value Object) (node, node) {
 	return this.insert(len(this.contents), value)
 }
 
+func (this *leafNode) appendNode(other node) (node, node) {
+	return appendNodeImpl(this, other.(*leafNode))
+}
+
+func (this *leafNode) prependNode(other node) (node, node) {
+	return appendNodeImpl(other.(*leafNode), this)
+}
+
 func (this *leafNode) insert(indexBefore int, value Object) (node, node) {
 	currentSize := len(this.contents)
 	if currentSize < maxPerNode {
@@ -130,5 +138,26 @@ func (this *leafNode) next(state *iteratorState) (*iteratorState, Object) {
 		return state.next, value
 	} else {
 		return state, value
+	}
+}
+
+func appendNodeImpl(a *leafNode, b *leafNode) (node, node) {
+	myLen := len(a.contents)
+	otherLen := len(b.contents)
+	newLen := myLen + otherLen
+	if newLen <= maxPerNode {
+		newContents := make([]Object, newLen)
+		copy(newContents[0:], a.contents)
+		copy(newContents[myLen:], b.contents)
+		return &leafNode{newContents}, nil
+	} else {
+		newContents := make([]Object, newLen)
+		copy(newContents[0:], a.contents)
+		copy(newContents[myLen:], b.contents)
+		first := make([]Object, minPerNode)
+		second := make([]Object, newLen-minPerNode)
+		copy(first[0:], newContents[0:minPerNode])
+		copy(second[0:], newContents[minPerNode:])
+		return &leafNode{first}, &leafNode{second}
 	}
 }

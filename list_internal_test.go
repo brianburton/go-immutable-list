@@ -118,6 +118,28 @@ func TestAppendList(t *testing.T) {
 	validateList(t, merged, 60000)
 }
 
+func TestAppendList2(t *testing.T) {
+	firstSize := 872
+	first := createListForTestDirectly(1, firstSize)
+	for secondSize := 0; secondSize <= firstSize; secondSize++ {
+		totalSize := firstSize + secondSize
+		second := createListForTest(firstSize+1, totalSize)
+		merged := first.AppendList(second)
+		validateList(t, merged, totalSize)
+	}
+}
+
+func TestPrependList(t *testing.T) {
+	secondSize := 900
+	for firstSize := 0; firstSize <= secondSize; firstSize++ {
+		totalSize := firstSize + secondSize
+		first := createListForTestDirectly(1, firstSize)
+		second := createListForTestReverseDirectly(firstSize+1, totalSize)
+		merged := first.AppendList(second)
+		validateList(t, merged, totalSize)
+	}
+}
+
 func TestIterator(t *testing.T) {
 	for length := 0; length <= 1024; length++ {
 		actual := copyList(createListForTest(1, length))
@@ -148,6 +170,22 @@ func createListForTest(firstValue int, lastValue int) List {
 		builder.Add(val(i))
 	}
 	return builder.Build()
+}
+
+func createListForTestDirectly(firstValue int, lastValue int) List {
+	answer := Create()
+	for i := firstValue; i <= lastValue; i++ {
+		answer = answer.Append(val(i))
+	}
+	return answer
+}
+
+func createListForTestReverseDirectly(firstValue int, lastValue int) List {
+	answer := Create()
+	for i := lastValue; i >= firstValue; i-- {
+		answer = answer.Insert(0, val(i))
+	}
+	return answer
 }
 
 func validateList(t *testing.T, list List, size int) {

@@ -34,12 +34,15 @@ type List interface {
 	Delete(index int) List
 	Set(index int, value Object) List
 	FwdIterate() Iterator
+	height() int
 }
 
 type node interface {
 	size() int
 	get(index int) Object
 	append(value Object) (node, node)
+	appendNode(other node) (node, node)
+	prependNode(other node) (node, node)
 	insert(indexBefore int, value Object) (node, node)
 	forEach(proc Processor)
 	visit(start int, limit int, v Visitor)
@@ -92,6 +95,10 @@ func (this *listImpl) Size() int {
 	return this.root.size()
 }
 
+func (this *listImpl) height() int {
+	return this.root.height()
+}
+
 func (this *listImpl) Get(index int) Object {
 	return this.root.get(index)
 }
@@ -103,51 +110,18 @@ func (this *listImpl) Append(value Object) List {
 
 func (this *listImpl) AppendList(other List) List {
 	otherImpl := other.(*listImpl)
-	mergeHeight := computeMergeHeight(this.root, otherImpl.root)
-	if mergeHeight >= 1 {
-		newRoot := mergeLists(mergeHeight, this.root, otherImpl.root)
-		return &listImpl{newRoot}
-	} else if this.root.size() > otherImpl.root.size() {
-		var answer List = this
-		other.ForEach(func(object Object) {
-			answer = answer.Append(object)
-		})
-		return answer
+	thisSize := this.root.size()
+	otherSize := otherImpl.root.size()
+	if thisSize == 0 {
+		return other
+	} else if otherSize == 0 {
+		return this
+	} else if thisSize >= otherSize {
+		replacement, extra := this.root.appendNode(otherImpl.root)
+		return listInsertImpl(replacement, extra)
 	} else {
-		answer := other
-		index := 0
-		this.ForEach(func(object Object) {
-			answer = answer.Insert(index, object)
-			index++
-		})
-		return answer
-	}
-}
-
-// cost based estimator to decide whether to use insert or merge to append a list
-func computeMergeHeight(this node, other node) int {
-	thisHeight := this.maxCompleteHeight()
-	otherHeight := other.maxCompleteHeight()
-	minHeight := minInt(thisHeight, otherHeight)
-	maxHeight := maxInt(thisHeight, otherHeight)
-	if minHeight <= 1 {
-		return 0
-	}
-
-	heightDiff := maxHeight - minHeight
-	branchEstimate := 1
-	branchFactor := minPerNode
-	for i := 1; i <= heightDiff; i++ {
-		branchEstimate += branchFactor
-		branchFactor *= minPerNode
-	}
-
-	smallerSize := minInt(this.size(), other.size())
-	insertEstimate := (1 + maxHeight) * smallerSize
-	if branchEstimate > insertEstimate {
-		return 0
-	} else {
-		return minHeight
+		replacement, extra := otherImpl.root.prependNode(this.root)
+		return listInsertImpl(replacement, extra)
 	}
 }
 

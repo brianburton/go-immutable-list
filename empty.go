@@ -26,6 +26,14 @@ func (_ *emptyNode) append(value Object) (node, node) {
 	return &leafNode{contents: []Object{value}}, nil
 }
 
+func (_ *emptyNode) appendNode(other node) (node, node) {
+	return other, nil
+}
+
+func (_ *emptyNode) prependNode(other node) (node, node) {
+	return other, nil
+}
+
 func (_ *emptyNode) insert(_ int, value Object) (node, node) {
 	return &leafNode{contents: []Object{value}}, nil
 }

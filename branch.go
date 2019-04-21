@@ -1,5 +1,7 @@
 package immutableList
 
+import "fmt"
+
 type branchNode struct {
 	children  []node
 	totalSize int
@@ -37,6 +39,80 @@ func (this *branchNode) get(index int) Object {
 		index -= child.size()
 	}
 	return nil
+}
+
+func (this *branchNode) appendNode(other node) (node, node) {
+	var children []node
+	thisHeight := this.height()
+	thatHeight := other.height()
+	thisLen := len(this.children)
+	if thatHeight > thisHeight {
+		panic(fmt.Sprintf("appendNode called with larger node as argument: thisHeight=%d thatHeight=%d", thisHeight, thatHeight))
+	} else if thatHeight == thisHeight {
+		that := other.(*branchNode)
+		thatLen := len(that.children)
+		children = make([]node, thisLen+thatLen)
+		copy(children[0:], this.children)
+		copy(children[thisLen:], that.children)
+	} else {
+		replacement, extra := this.children[thisLen-1].appendNode(other)
+		if extra == nil {
+			children = make([]node, thisLen)
+			copy(children, this.children[0:thisLen-1])
+			children[thisLen-1] = replacement
+		} else {
+			newLen := thisLen + 1
+			children = make([]node, newLen)
+			copy(children, this.children[0:thisLen-1])
+			children[newLen-2] = replacement
+			children[newLen-1] = extra
+		}
+	}
+	return splitIfNecessary(children, this.size()+other.size())
+}
+
+func (this *branchNode) prependNode(other node) (node, node) {
+	var children []node
+	thisHeight := this.height()
+	thatHeight := other.height()
+	myLen := len(this.children)
+	if thatHeight > thisHeight {
+		panic(fmt.Sprintf("prependNode called with larger node as argument: thisHeight=%d thatHeight=%d", thisHeight, thatHeight))
+	} else if thatHeight == thisHeight {
+		thatBranch := other.(*branchNode)
+		thatLen := len(thatBranch.children)
+		children = make([]node, myLen+thatLen)
+		copy(children[0:], thatBranch.children)
+		copy(children[thatLen:], this.children)
+	} else {
+		replacement, extra := this.children[0].prependNode(other)
+		if extra == nil {
+			children = make([]node, myLen)
+			children[0] = replacement
+			copy(children[1:], this.children[1:])
+		} else {
+			children = make([]node, myLen+1)
+			children[0] = replacement
+			children[1] = extra
+			copy(children[2:], this.children[1:])
+		}
+	}
+	return splitIfNecessary(children, this.size()+other.size())
+}
+
+func splitIfNecessary(newChildren []node, totalSize int) (node, node) {
+	newLen := len(newChildren)
+	if newLen <= maxPerNode {
+		return &branchNode{newChildren, totalSize}, nil
+	} else {
+		firstLen := newLen / 2
+		secondLen := newLen - firstLen
+		first := make([]node, firstLen)
+		second := make([]node, secondLen)
+		copy(first, newChildren[0:])
+		copy(second, newChildren[firstLen:])
+		return &branchNode{first, computeNodeSize(first)}, &branchNode{second, computeNodeSize(second)}
+	}
 }
 
 func (this *branchNode) append(value Object) (node, node) {
