@@ -100,21 +100,6 @@ func (this *branchNode) prependNode(other node) (node, node) {
 	return splitIfNecessary(children, this.size()+other.size())
 }
 
-func splitIfNecessary(newChildren []node, totalSize int) (node, node) {
-	newLen := len(newChildren)
-	if newLen <= maxPerNode {
-		return &branchNode{newChildren, totalSize}, nil
-	} else {
-		firstLen := newLen / 2
-		secondLen := newLen - firstLen
-		first := make([]node, firstLen)
-		second := make([]node, secondLen)
-		copy(first, newChildren[0:])
-		copy(second, newChildren[firstLen:])
-		return &branchNode{first, computeNodeSize(first)}, &branchNode{second, computeNodeSize(second)}
-	}
-}
-
 func (this *branchNode) append(value Object) (node, node) {
 	lastIndex := len(this.children) - 1
 	replacement, extra := this.children[lastIndex].append(value)
@@ -240,48 +225,36 @@ func findChildForIndex(indexBefore int, children []node) (childIndex int, childO
 	return childIndex, indexBefore - childStart
 }
 
-func replaceImpl(totalSize int, children []node, replaceIndex int, replacement node, extra node) (node, node) {
-	newSize := totalSize + 1
+func replaceImpl(totalSize int, oldChildren []node, replaceIndex int, replacement node, extra node) (node, node) {
+	var newChildren []node
+	oldLen := len(oldChildren)
 	if extra == nil {
-		newChildren := replaceNode(replaceIndex, replacement, children)
-		return &branchNode{children: newChildren, totalSize: newSize}, nil
-	} else if len(children) < maxPerNode {
-		newChildren := insertReplaceNode(replaceIndex, replacement, extra, children)
-		return &branchNode{children: newChildren, totalSize: newSize}, nil
+		newChildren = make([]node, oldLen)
+		copy(newChildren, oldChildren)
+		newChildren[replaceIndex] = replacement
 	} else {
-		first, second := splitInsertReplaceNode(replaceIndex, replacement, extra, children)
-		child1 := branchNode{children: first, totalSize: computeNodeSize(first)}
-		child2 := branchNode{children: second, totalSize: computeNodeSize(second)}
-		return &child1, &child2
+		newChildren = make([]node, oldLen+1)
+		copy(newChildren, oldChildren[0:replaceIndex])
+		newChildren[replaceIndex] = replacement
+		newChildren[replaceIndex+1] = extra
+		copy(newChildren[replaceIndex+2:], oldChildren[replaceIndex+1:])
 	}
+	return splitIfNecessary(newChildren, totalSize+1)
 }
 
-func replaceNode(replaceIndex int, replacement node, from []node) []node {
-	newNodes := make([]node, len(from))
-	copy(newNodes, from)
-	newNodes[replaceIndex] = replacement
-	return newNodes
-}
-
-func insertReplaceNode(replaceIndex int, replacement node, extra node, from []node) []node {
-	newNodes := make([]node, len(from)+1)
-	copy(newNodes[0:], from[0:replaceIndex])
-	newNodes[replaceIndex] = replacement
-	newNodes[replaceIndex+1] = extra
-	copy(newNodes[replaceIndex+2:], from[replaceIndex+1:])
-	return newNodes
-}
-
-func splitInsertReplaceNode(replaceIndex int, replacement node, extra node, from []node) ([]node, []node) {
-	newNodes := insertReplaceNode(replaceIndex, replacement, extra, from)
-	newLen := len(newNodes)
-	secondLen := newLen / 2
-	firstLen := newLen - secondLen
-	first := make([]node, firstLen)
-	copy(first, newNodes[0:firstLen])
-	second := make([]node, secondLen)
-	copy(second, newNodes[firstLen:])
-	return first, second
+func splitIfNecessary(newChildren []node, totalSize int) (node, node) {
+	newLen := len(newChildren)
+	if newLen <= maxPerNode {
+		return &branchNode{newChildren, totalSize}, nil
+	} else {
+		firstLen := newLen / 2
+		secondLen := newLen - firstLen
+		first := make([]node, firstLen)
+		second := make([]node, secondLen)
+		copy(first, newChildren[0:])
+		copy(second, newChildren[firstLen:])
+		return &branchNode{first, computeNodeSize(first)}, &branchNode{second, computeNodeSize(second)}
+	}
 }
 
 func computeNodeSize(children []node) int {
