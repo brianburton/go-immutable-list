@@ -1,5 +1,7 @@
 package immutableList
 
+import "fmt"
+
 type leafNode struct {
 	contents []Object
 }
@@ -16,7 +18,7 @@ func (this *leafNode) get(index int) Object {
 	if index >= 0 && index < len(this.contents) {
 		return this.contents[index]
 	} else {
-		return nil
+		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", len(this.contents), index))
 	}
 }
 

@@ -1,5 +1,7 @@
 package immutableList
 
+import "fmt"
+
 const (
 	minPerNode = 8
 	maxPerNode = 2 * minPerNode
@@ -120,7 +122,7 @@ func (this *listImpl) AppendList(other List) List {
 func (this *listImpl) Insert(indexBefore int, value Object) List {
 	currentSize := this.root.size()
 	if indexBefore < 0 || indexBefore > currentSize {
-		return nil
+		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", currentSize, indexBefore))
 	} else if indexBefore == currentSize {
 		return this.Append(value)
 	} else {
@@ -142,7 +144,7 @@ func listInsertImpl(replacement node, extra node) List {
 
 func (this *listImpl) Delete(index int) List {
 	if index < 0 || index >= this.Size() {
-		return nil
+		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", this.Size(), index))
 	}
 	newRoot := this.root.delete(index)
 	return &listImpl{newRoot}
@@ -170,7 +172,7 @@ func (this *listImpl) Select(predicate func(Object) bool) List {
 
 func (this *listImpl) Slice(offset, limit int) []Object {
 	if offset < 0 || limit < offset || limit > this.Size() {
-		return nil
+		panic(fmt.Sprintf("invalid offset or limit: size=%d offset=%d limit=%d", this.Size(), offset, limit))
 	}
 	if limit == offset {
 		return make([]Object, 0)
@@ -185,7 +187,7 @@ func (this *listImpl) Slice(offset, limit int) []Object {
 func (this *listImpl) Set(index int, value Object) List {
 	size := this.Size()
 	if index < 0 || index > size {
-		return nil
+		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", size, index))
 	}
 	if index == size {
 		return this.Append(value)

@@ -1,5 +1,7 @@
 package immutableList
 
+import "fmt"
+
 type emptyNode struct {
 }
 
@@ -12,7 +14,7 @@ func (_ *emptyNode) size() int {
 }
 
 func (_ *emptyNode) get(index int) Object {
-	return nil
+	panic(fmt.Sprintf("index out of bounds: size=0 index=%d", index))
 }
 
 func (_ *emptyNode) append(value Object) (node, node) {

@@ -36,7 +36,7 @@ func (this *branchNode) get(index int) Object {
 		}
 		index -= child.size()
 	}
-	return nil
+	panic(fmt.Sprintf("index out of bounds: size=%d index=%d", this.nodeSize, index))
 }
 
 func (this *branchNode) appendNode(other node) (node, node) {
