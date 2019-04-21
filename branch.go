@@ -147,17 +147,6 @@ func (this *branchNode) height() int {
 	return this.nodeHeight
 }
 
-func (this *branchNode) visitNodesOfHeight(targetHeight int, proc nodeProcessor) {
-	myHeight := this.height()
-	if myHeight == targetHeight {
-		proc(this)
-	} else if myHeight > targetHeight {
-		for _, child := range this.children {
-			child.visitNodesOfHeight(targetHeight, proc)
-		}
-	}
-}
-
 func (this *branchNode) isComplete() bool {
 	return len(this.children) >= minPerNode
 }

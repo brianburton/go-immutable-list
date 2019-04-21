@@ -65,12 +65,6 @@ func (this *leafNode) height() int {
 	return 1
 }
 
-func (this *leafNode) visitNodesOfHeight(targetHeight int, proc nodeProcessor) {
-	if targetHeight == 1 {
-		proc(this)
-	}
-}
-
 func insertObject(insertIndex int, extra Object, from []Object) []Object {
 	newObjects := make([]Object, len(from)+1)
 	copy(newObjects[0:], from[0:insertIndex])

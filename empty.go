@@ -3,9 +3,6 @@ package immutableList
 type emptyNode struct {
 }
 
-func (_ *emptyNode) visitNodesOfHeight(targetHeight int, proc nodeProcessor) {
-}
-
 func (_ *emptyNode) height() int {
 	return 1
 }

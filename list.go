@@ -9,7 +9,6 @@ type Object interface{}
 
 type Processor func(Object)
 type Visitor func(int, Object)
-type nodeProcessor func(node)
 type iteratorState struct {
 	next         *iteratorState
 	currentNode  node
@@ -34,7 +33,6 @@ type List interface {
 	Delete(index int) List
 	Set(index int, value Object) List
 	FwdIterate() Iterator
-	height() int
 }
 
 type node interface {
@@ -47,7 +45,6 @@ type node interface {
 	forEach(proc Processor)
 	visit(start int, limit int, v Visitor)
 	height() int
-	visitNodesOfHeight(targetHeight int, proc nodeProcessor)
 	isComplete() bool
 	mergeWith(other node) node
 	delete(index int) node
@@ -92,10 +89,6 @@ func Create() List {
 
 func (this *listImpl) Size() int {
 	return this.root.size()
-}
-
-func (this *listImpl) height() int {
-	return this.root.height()
 }
 
 func (this *listImpl) Get(index int) Object {
