@@ -95,6 +95,42 @@ func TestHead(t *testing.T) {
 	}
 }
 
+func TestTail(t *testing.T) {
+	list := createListForTest(1, 1234)
+	for i := list.Size(); i >= 0; i-- {
+		truncated := list.Tail(i)
+		validateList2(t, truncated, i+1, list.Size())
+	}
+	list = createListForTest(1, minPerNode)
+	for i := 1; i <= minPerNode; i++ {
+		list = list.Tail(1)
+		validateList2(t, list, i+1, minPerNode)
+	}
+}
+
+func TestSubList(t *testing.T) {
+	list := createListForTest(1, 1122)
+	offset := 0
+	limit := list.Size()
+	for offset < limit {
+		sub := list.SubList(offset, limit)
+		validateList2(t, sub, offset+1, limit)
+		limit--
+		sub = list.SubList(offset, limit)
+		validateList2(t, sub, offset+1, limit)
+		offset++
+	}
+	list = createListForTest(1, 257)
+	for i := 0; i <= list.Size(); i++ {
+		sub := list.SubList(i, list.Size())
+		validateList2(t, sub, i+1, list.Size())
+	}
+	for i := 0; i <= list.Size(); i++ {
+		sub := list.SubList(0, i)
+		validateList2(t, sub, 1, i)
+	}
+}
+
 func TestBuilder(t *testing.T) {
 	builder := CreateBuilder()
 	validateList(t, builder.Build(), 0)
@@ -212,12 +248,17 @@ func createListForTestReverseDirectly(firstValue int, lastValue int) List {
 }
 
 func validateList(t *testing.T, list List, size int) {
+	validateList2(t, list, 1, size)
+}
+
+func validateList2(t *testing.T, list List, first int, last int) {
+	size := last - first + 1
 	if list.Size() != size {
 		t.Error(fmt.Sprintf("expected size %d but got %v", size, list.Size()))
 	}
 	ei := 0
 	list.Visit(0, list.Size(), func(index int, obj Object) {
-		if index != ei || obj.(string) != val(index+1) {
+		if index != ei || obj.(string) != val(index+first) {
 			t.Error(fmt.Sprintf("visitor expected %v/%s but got %v/%s", ei, val(ei+1), index, obj))
 		}
 		ei += 1
@@ -226,7 +267,7 @@ func validateList(t *testing.T, list List, size int) {
 		t.Error(fmt.Sprintf("expected count %d but got %v", list.Size(), ei))
 	}
 	for i := 0; i < size; i++ {
-		expected := val(i + 1)
+		expected := val(i + first)
 		actual := list.Get(i)
 		if actual != expected {
 			t.Error(fmt.Sprintf("get expected %v/%s but got %v/%s", i, expected, i, actual))

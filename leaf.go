@@ -64,6 +64,22 @@ func (this *leafNode) head(index int) node {
 	return createLeafNode(newContents)
 }
 
+func (this *leafNode) tail(index int) node {
+	myLen := len(this.contents)
+	if index < 0 || index > myLen {
+		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", myLen, index))
+	}
+	if index == 0 {
+		return this
+	}
+	if index == myLen {
+		return sharedEmptyNodeInstance
+	}
+	newContents := make([]Object, myLen-index)
+	copy(newContents, this.contents[index:])
+	return createLeafNode(newContents)
+}
+
 func (this *leafNode) forEach(proc Processor) {
 	for _, value := range this.contents {
 		proc(value)

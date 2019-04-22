@@ -140,7 +140,7 @@ func (this *branchNode) head(index int) node {
 	newChildren := make([]node, childIndex)
 	copy(newChildren, this.children[0:childIndex])
 	newBranch := createBranchNode(newChildren, computeBranchNodeSize(newChildren), this.nodeHeight)
-	if childOffset == 0 {
+	if newChild.size() == 0 {
 		return newBranch
 	}
 
@@ -149,6 +149,38 @@ func (this *branchNode) head(index int) node {
 		panic("extra should never be non-nil here")
 	}
 	return appended
+}
+
+func (this *branchNode) tail(index int) node {
+	if index < 0 || index > this.nodeSize {
+		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", this.nodeSize, index))
+	}
+
+	if index == this.nodeSize {
+		return sharedEmptyNodeInstance
+	}
+
+	myLen := len(this.children)
+	childIndex, childOffset := findChildForIndex(index, this.children)
+	oldChild := this.children[childIndex]
+	newChild := oldChild.tail(childOffset)
+	if childIndex == (myLen - 1) {
+		return newChild
+	}
+
+	newLen := myLen - (childIndex + 1)
+	newChildren := make([]node, newLen)
+	copy(newChildren, this.children[childIndex+1:])
+	newBranch := createBranchNode(newChildren, computeBranchNodeSize(newChildren), this.nodeHeight)
+	if newChild.size() == 0 {
+		return newBranch
+	}
+
+	prepended, extra := newBranch.prependNode(newChild)
+	if extra != nil {
+		panic("extra should never be non-nil here")
+	}
+	return prepended
 }
 
 func (this *branchNode) forEach(proc Processor) {

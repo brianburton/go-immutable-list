@@ -31,6 +31,8 @@ type List interface {
 	AppendList(other List) List
 	Insert(indexBefore int, value Object) List
 	Head(length int) List
+	Tail(index int) List
+	SubList(offset int, limit int) List
 	ForEach(proc Processor)
 	Visit(offset int, limit int, v Visitor)
 	Select(predicate func(Object) bool) List
@@ -49,6 +51,7 @@ type node interface {
 	prependNode(other node) (node, node)
 	insert(indexBefore int, value Object) (node, node)
 	head(index int) node
+	tail(index int) node
 	forEach(proc Processor)
 	visit(start int, limit int, v Visitor)
 	height() int
@@ -180,6 +183,34 @@ func (this *listImpl) Head(length int) List {
 		return sharedEmptyListInstance
 	} else {
 		newRoot := this.root.head(length)
+		return &listImpl{newRoot}
+	}
+}
+
+func (this *listImpl) Tail(index int) List {
+	size := this.Size()
+	if index < 0 || index > size {
+		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", size, index))
+	}
+	if index == size {
+		return sharedEmptyListInstance
+	} else {
+		newRoot := this.root.tail(index)
+		return &listImpl{newRoot}
+	}
+}
+
+func (this *listImpl) SubList(offset int, limit int) List {
+	size := this.Size()
+	if offset < 0 || limit < offset || limit > size {
+		panic(fmt.Sprintf("invalid offset or limit: size=%d offset=%d limit=%d", size, offset, limit))
+	}
+	if offset == 0 && limit == size {
+		return this
+	} else if offset == limit {
+		return sharedEmptyListInstance
+	} else {
+		newRoot := this.root.head(limit).tail(offset)
 		return &listImpl{newRoot}
 	}
 }
