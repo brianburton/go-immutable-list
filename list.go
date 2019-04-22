@@ -95,7 +95,7 @@ func Create() List {
 	return sharedEmptyListInstance
 }
 
-func createList(root node) List {
+func createListForBuilder(root node) List {
 	if root.size() == 0 {
 		return sharedEmptyListInstance
 	} else {

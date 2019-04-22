@@ -37,7 +37,7 @@ func (this *builderImpl) Size() int {
 }
 
 func (this *builderImpl) Build() List {
-	return createList(this.leaves.build())
+	return createListForBuilder(this.leaves.build())
 }
 
 func createLeafBuilder() *leafBuilder {
