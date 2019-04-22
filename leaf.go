@@ -25,6 +25,10 @@ func (this *leafNode) getFirst() Object {
 	return this.contents[0]
 }
 
+func (this *leafNode) getLast() Object {
+	return this.contents[len(this.contents)-1]
+}
+
 func (this *leafNode) pop() (Object, node) {
 	value := this.contents[0]
 	size := len(this.contents)

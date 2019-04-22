@@ -27,6 +27,8 @@ type Iterator interface {
 type List interface {
 	Size() int
 	Get(index int) Object
+	GetFirst() Object
+	GetLast() Object
 	Append(value Object) List
 	AppendList(other List) List
 	Insert(indexBefore int, value Object) List
@@ -52,6 +54,7 @@ type node interface {
 	size() int
 	get(index int) Object
 	getFirst() Object
+	getLast() Object
 	append(value Object) (node, node)
 	appendNode(other node) (node, node)
 	prependNode(other node) (node, node)
@@ -121,6 +124,14 @@ func (this *listImpl) Size() int {
 
 func (this *listImpl) Get(index int) Object {
 	return this.root.get(index)
+}
+
+func (this *listImpl) GetFirst() Object {
+	return this.root.getFirst()
+}
+
+func (this *listImpl) GetLast() Object {
+	return this.root.getLast()
 }
 
 func (this *listImpl) Append(value Object) List {

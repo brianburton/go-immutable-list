@@ -46,6 +46,10 @@ func (this *branchNode) getFirst() Object {
 	return this.children[0].getFirst()
 }
 
+func (this *branchNode) getLast() Object {
+	return this.children[len(this.children)-1].getLast()
+}
+
 func (this *branchNode) appendNode(other node) (node, node) {
 	var children []node
 	thisHeight := this.height()

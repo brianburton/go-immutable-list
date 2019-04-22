@@ -270,6 +270,20 @@ func TestQueueOps(t *testing.T) {
 	validateList(t, popped, 4)
 }
 
+func TestFirstLast(t *testing.T) {
+	list := createListForTest(1, 1)
+	validateValue(t, 1, list.GetFirst())
+	validateValue(t, 1, list.GetLast())
+
+	list = list.Append(val(2))
+	validateValue(t, 1, list.GetFirst())
+	validateValue(t, 2, list.GetLast())
+
+	list = createListForTest(1, 500)
+	validateValue(t, 1, list.GetFirst())
+	validateValue(t, 500, list.GetLast())
+}
+
 func copyList(list List) List {
 	answer := Create()
 	for i := list.FwdIterate(); i.Next(); {
@@ -309,6 +323,13 @@ func createListForTestReverseDirectly(firstValue int, lastValue int) List {
 		answer = answer.Insert(0, val(i))
 	}
 	return answer
+}
+
+func validateValue(t *testing.T, expected int, actual Object) {
+	e := val(expected)
+	if actual != e {
+		t.Error(fmt.Sprintf("expected %v but got %v", expected, actual))
+	}
 }
 
 func validateList(t *testing.T, list List, size int) {

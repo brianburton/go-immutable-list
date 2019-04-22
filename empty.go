@@ -23,6 +23,10 @@ func (_ *emptyNode) getFirst() Object {
 	panic("getFirst called on emptyNode")
 }
 
+func (_ *emptyNode) getLast() Object {
+	panic("getLast called on emptyNode")
+}
+
 func (_ *emptyNode) pop() (Object, node) {
 	panic("pop called on emptyNode")
 }
