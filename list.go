@@ -30,6 +30,7 @@ type List interface {
 	Append(value Object) List
 	AppendList(other List) List
 	Insert(indexBefore int, value Object) List
+	Head(length int) List
 	ForEach(proc Processor)
 	Visit(offset int, limit int, v Visitor)
 	Select(predicate func(Object) bool) List
@@ -47,6 +48,7 @@ type node interface {
 	appendNode(other node) (node, node)
 	prependNode(other node) (node, node)
 	insert(indexBefore int, value Object) (node, node)
+	head(index int) node
 	forEach(proc Processor)
 	visit(start int, limit int, v Visitor)
 	height() int
@@ -165,6 +167,19 @@ func (this *listImpl) Delete(index int) List {
 		return sharedEmptyListInstance
 	} else {
 		newRoot := this.root.delete(index)
+		return &listImpl{newRoot}
+	}
+}
+
+func (this *listImpl) Head(length int) List {
+	size := this.Size()
+	if length < 0 || length > size {
+		panic(fmt.Sprintf("length out of bounds: size=%d length=%d", size, length))
+	}
+	if length == 0 {
+		return sharedEmptyListInstance
+	} else {
+		newRoot := this.root.head(length)
 		return &listImpl{newRoot}
 	}
 }

@@ -35,6 +35,13 @@ func (_ *emptyNode) insert(_ int, value Object) (node, node) {
 	return createLeafNode([]Object{value}), nil
 }
 
+func (_ *emptyNode) head(index int) node {
+	if index != 0 {
+		panic(fmt.Sprintf("index out of bounds: size=0 index=%d", index))
+	}
+	return sharedEmptyNodeInstance
+}
+
 func (this *emptyNode) set(index int, value Object) node {
 	return this
 }

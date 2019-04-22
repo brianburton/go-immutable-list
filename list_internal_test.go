@@ -82,6 +82,19 @@ func TestDelete(t *testing.T) {
 	validateList(t, list, 2000)
 }
 
+func TestHead(t *testing.T) {
+	list := createListForTest(1, 1234)
+	for i := list.Size(); i >= 0; i-- {
+		truncated := list.Head(i)
+		validateList(t, truncated, i)
+	}
+	list = createListForTest(1, minPerNode)
+	for i := list.Size(); i >= 0; i-- {
+		list = list.Head(i)
+		validateList(t, list, i)
+	}
+}
+
 func TestBuilder(t *testing.T) {
 	builder := CreateBuilder()
 	validateList(t, builder.Build(), 0)

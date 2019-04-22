@@ -122,6 +122,35 @@ func (this *branchNode) set(index int, value Object) node {
 	return createBranchNode(newChildren, this.nodeSize, this.nodeHeight)
 }
 
+func (this *branchNode) head(index int) node {
+	if index < 0 || index > this.nodeSize {
+		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", this.nodeSize, index))
+	}
+
+	if index == this.nodeSize {
+		return this
+	}
+
+	childIndex, childOffset := findChildForIndex(index, this.children)
+	newChild := this.children[childIndex].head(childOffset)
+	if childIndex == 0 {
+		return newChild
+	}
+
+	newChildren := make([]node, childIndex)
+	copy(newChildren, this.children[0:childIndex])
+	newBranch := createBranchNode(newChildren, computeBranchNodeSize(newChildren), this.nodeHeight)
+	if childOffset == 0 {
+		return newBranch
+	}
+
+	appended, extra := newBranch.appendNode(newChild)
+	if extra != nil {
+		panic("extra should never be non-nil here")
+	}
+	return appended
+}
+
 func (this *branchNode) forEach(proc Processor) {
 	for _, child := range this.children {
 		child.forEach(proc)
