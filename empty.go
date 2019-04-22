@@ -23,6 +23,10 @@ func (_ *emptyNode) getFirst() Object {
 	panic("getFirst called on emptyNode")
 }
 
+func (_ *emptyNode) pop() (Object, node) {
+	panic("pop called on emptyNode")
+}
+
 func (_ *emptyNode) append(value Object) (node, node) {
 	return createLeafNode([]Object{value}), nil
 }

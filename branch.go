@@ -255,8 +255,32 @@ func (this *branchNode) delete(index int) node {
 	if len(newChildren) == 1 {
 		return newChildren[0]
 	} else {
-		return createBranchNode(newChildren, this.size()-1, this.nodeHeight)
+		return createBranchNode(newChildren, this.nodeSize-1, this.nodeHeight)
 	}
+}
+
+func (this *branchNode) pop() (Object, node) {
+	value, newChild := this.children[0].pop()
+
+	var newChildren []node
+	if newChild.isComplete() {
+		newChildren = make([]node, len(this.children))
+		newChildren[0] = newChild
+		copy(newChildren[1:], this.children[1:])
+	} else {
+		newChildren = make([]node, len(this.children)-1)
+		newChild = newChild.mergeWith(this.children[1])
+		newChildren[0] = newChild
+		copy(newChildren[1:], this.children[2:])
+	}
+
+	var newNode node
+	if len(newChildren) == 1 {
+		newNode = newChildren[0]
+	} else {
+		newNode = createBranchNode(newChildren, this.nodeSize-1, this.nodeHeight)
+	}
+	return value, newNode
 }
 
 func (this *branchNode) checkInvariants(report reporter, isRoot bool) {

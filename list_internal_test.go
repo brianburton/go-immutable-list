@@ -237,14 +237,26 @@ func TestIterator(t *testing.T) {
 }
 
 func TestStackOps(t *testing.T) {
-	s := Create().Push(val(4)).Push(val(3)).Push(val(2)).Push(val(1))
+	stack := Create().Push(val(4)).Push(val(3)).Push(val(2)).Push(val(1))
 	popped := Create()
-	for !s.IsEmpty() {
+	for !stack.IsEmpty() {
 		var value Object
-		value, s = s.Pop()
+		value, stack = stack.Pop()
 		popped = popped.Append(value)
 	}
 	validateList(t, popped, 4)
+
+	stack = Create()
+	for i := 500; i >= 1; i-- {
+		stack = stack.Push(val(i))
+	}
+	popped = Create()
+	for !stack.IsEmpty() {
+		var value Object
+		value, stack = stack.Pop()
+		popped = popped.Append(value)
+	}
+	validateList(t, popped, 500)
 }
 
 func TestQueueOps(t *testing.T) {

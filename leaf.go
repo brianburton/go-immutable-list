@@ -25,6 +25,20 @@ func (this *leafNode) getFirst() Object {
 	return this.contents[0]
 }
 
+func (this *leafNode) pop() (Object, node) {
+	value := this.contents[0]
+	size := len(this.contents)
+	var newNode node
+	if size == 1 {
+		newNode = sharedEmptyNodeInstance
+	} else {
+		newContents := make([]Object, size-1)
+		copy(newContents, this.contents[1:])
+		newNode = createLeafNode(newContents)
+	}
+	return value, newNode
+}
+
 func (this *leafNode) append(value Object) (node, node) {
 	return this.insert(len(this.contents), value)
 }

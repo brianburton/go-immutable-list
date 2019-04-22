@@ -67,6 +67,7 @@ type node interface {
 	set(index int, value Object) node
 	next(state *iteratorState) (*iteratorState, Object)
 	checkInvariants(r reporter, isRoot bool)
+	pop() (Object, node)
 }
 
 type listImpl struct {
@@ -314,16 +315,14 @@ func (this *listImpl) Push(value Object) List {
 }
 
 func (this *listImpl) Pop() (Object, List) {
-	size := this.Size()
-	if size == 0 {
+	switch this.Size() {
+	case 0:
 		panic("Pop called on empty List")
-	}
-
-	value := this.root.getFirst()
-	if size == 1 {
+	case 1:
+		value := this.root.getFirst()
 		return value, sharedEmptyListInstance
-	} else {
-		newRoot := this.root.delete(0)
+	default:
+		value, newRoot := this.root.pop()
 		return value, &listImpl{newRoot}
 	}
 }
