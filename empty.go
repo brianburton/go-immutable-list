@@ -59,5 +59,8 @@ func (_ *emptyNode) next(state *iteratorState) (*iteratorState, Object) {
 	return nil, nil
 }
 
-func (_ *emptyNode) checkInvariants(r reporter, isRoot bool) {
+func (this *emptyNode) checkInvariants(report reporter, isRoot bool) {
+	if this != sharedEmptyNodeInstance {
+		report("emptyNode is not sharedEmptyNodeInstance")
+	}
 }
