@@ -51,6 +51,7 @@ type List interface {
 type node interface {
 	size() int
 	get(index int) Object
+	getFirst() Object
 	append(value Object) (node, node)
 	appendNode(other node) (node, node)
 	prependNode(other node) (node, node)
@@ -313,12 +314,18 @@ func (this *listImpl) Push(value Object) List {
 }
 
 func (this *listImpl) Pop() (Object, List) {
-	if this.Size() == 0 {
+	size := this.Size()
+	if size == 0 {
 		panic("Pop called on empty List")
 	}
-	value := this.Get(0)
-	popped := this.Delete(0)
-	return value, popped
+
+	value := this.root.getFirst()
+	if size == 1 {
+		return value, sharedEmptyListInstance
+	} else {
+		newRoot := this.root.delete(0)
+		return value, &listImpl{newRoot}
+	}
 }
 
 func createListNode(replacement node, extra node) List {

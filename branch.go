@@ -42,6 +42,10 @@ func (this *branchNode) get(index int) Object {
 	panic("unreachable")
 }
 
+func (this *branchNode) getFirst() Object {
+	return this.children[0].getFirst()
+}
+
 func (this *branchNode) appendNode(other node) (node, node) {
 	var children []node
 	thisHeight := this.height()
@@ -257,11 +261,11 @@ func (this *branchNode) delete(index int) node {
 
 func (this *branchNode) checkInvariants(report reporter, isRoot bool) {
 	numValues := len(this.children)
+	if (numValues == 0) || (numValues < minPerNode && !isRoot) {
+		report(fmt.Sprintf("branchNode: too few values: numValues=%d root=%t", numValues, isRoot))
+	}
 	if numValues > maxPerNode {
 		report(fmt.Sprintf("branchNode: too many values: %d", numValues))
-	}
-	if numValues < minPerNode && !isRoot {
-		report(fmt.Sprintf("branchNode: too few values: %d", numValues))
 	}
 	if computedSize := computeBranchNodeSize(this.children); computedSize != this.nodeSize {
 		report(fmt.Sprintf("branchNode: incorrect node size: actual=%d expected=%d", computedSize, this.nodeSize))

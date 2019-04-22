@@ -21,6 +21,10 @@ func (this *leafNode) get(index int) Object {
 	return this.contents[index]
 }
 
+func (this *leafNode) getFirst() Object {
+	return this.contents[0]
+}
+
 func (this *leafNode) append(value Object) (node, node) {
 	return this.insert(len(this.contents), value)
 }
@@ -136,11 +140,11 @@ func (this *leafNode) next(state *iteratorState) (*iteratorState, Object) {
 
 func (this *leafNode) checkInvariants(report reporter, isRoot bool) {
 	numValues := len(this.contents)
+	if (numValues == 0) || (numValues < minPerNode && !isRoot) {
+		report(fmt.Sprintf("leafNode: too few values: numValues=%d root=%t", numValues, isRoot))
+	}
 	if numValues > maxPerNode {
 		report(fmt.Sprintf("leafNode: too many values: %d", numValues))
-	}
-	if numValues < minPerNode && !isRoot {
-		report(fmt.Sprintf("leafNode: too few values: %d", numValues))
 	}
 }
 

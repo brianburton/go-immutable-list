@@ -16,7 +16,11 @@ func (_ *emptyNode) size() int {
 }
 
 func (_ *emptyNode) get(index int) Object {
-	panic(fmt.Sprintf("index out of bounds: size=0 index=%d", index))
+	panic(fmt.Sprintf("get called on emptyNode: size=0 index=%d", index))
+}
+
+func (_ *emptyNode) getFirst() Object {
+	panic("getFirst called on emptyNode")
 }
 
 func (_ *emptyNode) append(value Object) (node, node) {
