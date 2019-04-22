@@ -58,3 +58,6 @@ func (this *emptyNode) delete(index int) node {
 func (_ *emptyNode) next(state *iteratorState) (*iteratorState, Object) {
 	return nil, nil
 }
+
+func (_ *emptyNode) checkInvariants(r reporter, isRoot bool) {
+}

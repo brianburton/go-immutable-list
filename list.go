@@ -17,6 +17,8 @@ type iteratorState struct {
 	currentIndex int
 }
 
+type reporter func(message string)
+
 type Iterator interface {
 	Next() bool
 	Get() Object
@@ -35,6 +37,7 @@ type List interface {
 	Delete(index int) List
 	Set(index int, value Object) List
 	FwdIterate() Iterator
+	checkInvariants(r reporter)
 }
 
 type node interface {
@@ -52,6 +55,7 @@ type node interface {
 	delete(index int) node
 	set(index int, value Object) node
 	next(state *iteratorState) (*iteratorState, Object)
+	checkInvariants(r reporter, isRoot bool)
 }
 
 type listImpl struct {
@@ -195,4 +199,8 @@ func (this *listImpl) Set(index int, value Object) List {
 		newRoot := this.root.set(index, value)
 		return &listImpl{newRoot}
 	}
+}
+
+func (this *listImpl) checkInvariants(r reporter) {
+	this.root.checkInvariants(r, true)
 }

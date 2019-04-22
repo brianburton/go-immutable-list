@@ -209,6 +209,9 @@ func validateList(t *testing.T, list List, size int) {
 			t.Error(fmt.Sprintf("get expected %v/%s but got %v/%s", i, expected, i, actual))
 		}
 	}
+	list.checkInvariants(func(message string) {
+		t.Error(message)
+	})
 }
 
 func validateSize(t *testing.T, actual int, expected int) {

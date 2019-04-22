@@ -187,7 +187,20 @@ func (this *branchNode) delete(index int) node {
 	if len(newChildren) == 1 {
 		return newChildren[0]
 	} else {
-		return createBranchNode(newChildren, computeNodeSize(newChildren), this.nodeHeight)
+		return createBranchNode(newChildren, this.size()-1, this.nodeHeight)
+	}
+}
+
+func (this *branchNode) checkInvariants(report reporter, isRoot bool) {
+	numValues := len(this.children)
+	if numValues > maxPerNode {
+		report(fmt.Sprintf("branchNode: too many values: %d", numValues))
+	}
+	if numValues < minPerNode && !isRoot {
+		report(fmt.Sprintf("branchNode: too few values: %d", numValues))
+	}
+	for _, child := range this.children {
+		child.checkInvariants(report, false)
 	}
 }
 

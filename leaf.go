@@ -127,6 +127,16 @@ func (this *leafNode) next(state *iteratorState) (*iteratorState, Object) {
 	}
 }
 
+func (this *leafNode) checkInvariants(report reporter, isRoot bool) {
+	numValues := len(this.contents)
+	if numValues > maxPerNode {
+		report(fmt.Sprintf("leafNode: too many values: %d", numValues))
+	}
+	if numValues < minPerNode && !isRoot {
+		report(fmt.Sprintf("leafNode: too few values: %d", numValues))
+	}
+}
+
 func appendNodeImpl(a *leafNode, b *leafNode) (node, node) {
 	myLen := len(a.contents)
 	otherLen := len(b.contents)
@@ -140,10 +150,12 @@ func appendNodeImpl(a *leafNode, b *leafNode) (node, node) {
 		newContents := make([]Object, newLen)
 		copy(newContents[0:], a.contents)
 		copy(newContents[myLen:], b.contents)
-		first := make([]Object, minPerNode)
-		second := make([]Object, newLen-minPerNode)
-		copy(first[0:], newContents[0:minPerNode])
-		copy(second[0:], newContents[minPerNode:])
+		firstLen := newLen / 2
+		secondLen := newLen - firstLen
+		first := make([]Object, firstLen)
+		second := make([]Object, secondLen)
+		copy(first[0:], newContents[0:firstLen])
+		copy(second[0:], newContents[firstLen:])
 		return createLeafNode(first), createLeafNode(second)
 	}
 }
