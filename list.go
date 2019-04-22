@@ -42,6 +42,10 @@ type List interface {
 	Set(index int, value Object) List
 	FwdIterate() Iterator
 	checkInvariants(r reporter)
+
+	IsEmpty() bool
+	Push(value Object) List
+	Pop() (Object, List)
 }
 
 type node interface {
@@ -298,6 +302,23 @@ func (this *listImpl) checkInvariants(report reporter) {
 		report("empty list is not the sharedEmptyListInstance")
 	}
 	this.root.checkInvariants(report, true)
+}
+
+func (this *listImpl) IsEmpty() bool {
+	return this.root.size() == 0
+}
+
+func (this *listImpl) Push(value Object) List {
+	return this.Insert(0, value)
+}
+
+func (this *listImpl) Pop() (Object, List) {
+	if this.Size() == 0 {
+		panic("Pop called on empty List")
+	}
+	value := this.Get(0)
+	popped := this.Delete(0)
+	return value, popped
 }
 
 func createListNode(replacement node, extra node) List {

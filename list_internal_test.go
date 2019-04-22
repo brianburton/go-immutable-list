@@ -236,6 +236,28 @@ func TestIterator(t *testing.T) {
 	}
 }
 
+func TestStackOps(t *testing.T) {
+	s := Create().Push(val(4)).Push(val(3)).Push(val(2)).Push(val(1))
+	popped := Create()
+	for !s.IsEmpty() {
+		var value Object
+		value, s = s.Pop()
+		popped = popped.Append(value)
+	}
+	validateList(t, popped, 4)
+}
+
+func TestQueueOps(t *testing.T) {
+	s := Create().Append(val(1)).Append(val(2)).Append(val(3)).Append(val(4))
+	popped := Create()
+	for !s.IsEmpty() {
+		var value Object
+		value, s = s.Pop()
+		popped = popped.Append(value)
+	}
+	validateList(t, popped, 4)
+}
+
 func copyList(list List) List {
 	answer := Create()
 	for i := list.FwdIterate(); i.Next(); {
