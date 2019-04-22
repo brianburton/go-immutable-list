@@ -67,6 +67,8 @@ type iteratorImpl struct {
 	value Object
 }
 
+var sharedEmptyListInstance List = &listImpl{sharedEmptyNodeInstance}
+
 func (this *listImpl) FwdIterate() Iterator {
 	var state *iteratorState
 	if this.root.size() == 0 {
@@ -90,7 +92,15 @@ func (this *iteratorImpl) Get() Object {
 }
 
 func Create() List {
-	return &listImpl{root: sharedEmptyInstance}
+	return sharedEmptyListInstance
+}
+
+func createList(root node) List {
+	if root.size() == 0 {
+		return sharedEmptyListInstance
+	} else {
+		return &listImpl{root}
+	}
 }
 
 func (this *listImpl) Size() int {
@@ -103,7 +113,7 @@ func (this *listImpl) Get(index int) Object {
 
 func (this *listImpl) Append(value Object) List {
 	replacement, extra := this.root.append(value)
-	return listInsertImpl(replacement, extra)
+	return createListNode(replacement, extra)
 }
 
 func (this *listImpl) AppendList(other List) List {
@@ -116,10 +126,10 @@ func (this *listImpl) AppendList(other List) List {
 		return this
 	} else if thisSize >= otherSize {
 		replacement, extra := this.root.appendNode(otherImpl.root)
-		return listInsertImpl(replacement, extra)
+		return createListNode(replacement, extra)
 	} else {
 		replacement, extra := otherImpl.root.prependNode(this.root)
-		return listInsertImpl(replacement, extra)
+		return createListNode(replacement, extra)
 	}
 }
 
@@ -131,11 +141,11 @@ func (this *listImpl) Insert(indexBefore int, value Object) List {
 		return this.Append(value)
 	} else {
 		replacement, extra := this.root.insert(maxInt(0, indexBefore), value)
-		return listInsertImpl(replacement, extra)
+		return createListNode(replacement, extra)
 	}
 }
 
-func listInsertImpl(replacement node, extra node) List {
+func createListNode(replacement node, extra node) List {
 	if extra == nil {
 		return &listImpl{root: replacement}
 	} else {
@@ -147,11 +157,16 @@ func listInsertImpl(replacement node, extra node) List {
 }
 
 func (this *listImpl) Delete(index int) List {
-	if index < 0 || index >= this.Size() {
-		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", this.Size(), index))
+	size := this.Size()
+	if index < 0 || index >= size {
+		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", size, index))
 	}
-	newRoot := this.root.delete(index)
-	return &listImpl{newRoot}
+	if size == 1 {
+		return sharedEmptyListInstance
+	} else {
+		newRoot := this.root.delete(index)
+		return &listImpl{newRoot}
+	}
 }
 
 func (this *listImpl) ForEach(proc Processor) {
@@ -201,6 +216,9 @@ func (this *listImpl) Set(index int, value Object) List {
 	}
 }
 
-func (this *listImpl) checkInvariants(r reporter) {
-	this.root.checkInvariants(r, true)
+func (this *listImpl) checkInvariants(report reporter) {
+	if this.Size() == 0 && this != sharedEmptyListInstance {
+		report("empty list is not the sharedEmptyListInstance")
+	}
+	this.root.checkInvariants(report, true)
 }

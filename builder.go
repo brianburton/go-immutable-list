@@ -37,7 +37,7 @@ func (this *builderImpl) Size() int {
 }
 
 func (this *builderImpl) Build() List {
-	return &listImpl{this.leaves.build()}
+	return createList(this.leaves.build())
 }
 
 func createLeafBuilder() *leafBuilder {
@@ -66,9 +66,7 @@ func (this *leafBuilder) addValue(value Object) {
 }
 
 func (this *leafBuilder) build() node {
-	if this.count == 0 {
-		return sharedEmptyInstance
-	} else if this.parent == nil {
+	if this.parent == nil {
 		return this.createLeafNodeOfLength(this.count)
 	} else {
 		return this.parent.build(this.createLeafNodeOfLength(this.count))
