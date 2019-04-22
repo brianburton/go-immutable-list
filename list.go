@@ -75,6 +75,18 @@ type iteratorImpl struct {
 
 var sharedEmptyListInstance List = &listImpl{sharedEmptyNodeInstance}
 
+func Create() List {
+	return sharedEmptyListInstance
+}
+
+func createListForBuilder(root node) List {
+	if root.size() == 0 {
+		return sharedEmptyListInstance
+	} else {
+		return &listImpl{root}
+	}
+}
+
 func (this *listImpl) FwdIterate() Iterator {
 	var state *iteratorState
 	if this.root.size() == 0 {
@@ -97,18 +109,6 @@ func (this *iteratorImpl) Get() Object {
 	return this.value
 }
 
-func Create() List {
-	return sharedEmptyListInstance
-}
-
-func createListForBuilder(root node) List {
-	if root.size() == 0 {
-		return sharedEmptyListInstance
-	} else {
-		return &listImpl{root}
-	}
-}
-
 func (this *listImpl) Size() int {
 	return this.root.size()
 }
@@ -128,38 +128,30 @@ func (this *listImpl) AppendList(other List) List {
 	otherSize := otherImpl.root.size()
 	if thisSize == 0 {
 		return other
-	} else if otherSize == 0 {
-		return this
-	} else if thisSize >= otherSize {
-		replacement, extra := this.root.appendNode(otherImpl.root)
-		return createListNode(replacement, extra)
-	} else {
-		replacement, extra := otherImpl.root.prependNode(this.root)
-		return createListNode(replacement, extra)
 	}
+	if otherSize == 0 {
+		return this
+	}
+
+	var replacement, extra node
+	if thisSize >= otherSize {
+		replacement, extra = this.root.appendNode(otherImpl.root)
+	} else {
+		replacement, extra = otherImpl.root.prependNode(this.root)
+	}
+	return createListNode(replacement, extra)
 }
 
 func (this *listImpl) Insert(indexBefore int, value Object) List {
 	currentSize := this.root.size()
 	if indexBefore < 0 || indexBefore > currentSize {
 		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", currentSize, indexBefore))
-	} else if indexBefore == currentSize {
+	}
+	if indexBefore == currentSize {
 		return this.Append(value)
-	} else {
-		replacement, extra := this.root.insert(indexBefore, value)
-		return createListNode(replacement, extra)
 	}
-}
-
-func createListNode(replacement node, extra node) List {
-	if extra == nil {
-		return &listImpl{root: replacement}
-	} else {
-		children := []node{replacement, extra}
-		nodeSize := replacement.size() + extra.size()
-		nodeHeight := replacement.height() + 1
-		return &listImpl{root: createBranchNode(children, nodeSize, nodeHeight)}
-	}
+	replacement, extra := this.root.insert(indexBefore, value)
+	return createListNode(replacement, extra)
 }
 
 func (this *listImpl) Delete(index int) List {
@@ -306,4 +298,15 @@ func (this *listImpl) checkInvariants(report reporter) {
 		report("empty list is not the sharedEmptyListInstance")
 	}
 	this.root.checkInvariants(report, true)
+}
+
+func createListNode(replacement node, extra node) List {
+	if extra == nil {
+		return &listImpl{root: replacement}
+	} else {
+		children := []node{replacement, extra}
+		nodeSize := replacement.size() + extra.size()
+		nodeHeight := replacement.height() + 1
+		return &listImpl{root: createBranchNode(children, nodeSize, nodeHeight)}
+	}
 }
