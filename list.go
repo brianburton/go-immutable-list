@@ -38,6 +38,7 @@ type List interface {
 	Select(predicate func(Object) bool) List
 	Slice(offset, limit int) []Object
 	Delete(index int) List
+	DeleteRange(offset int, limit int) List
 	Set(index int, value Object) List
 	FwdIterate() Iterator
 	checkInvariants(r reporter)
@@ -174,6 +175,35 @@ func (this *listImpl) Delete(index int) List {
 	}
 }
 
+func (this *listImpl) DeleteRange(offset int, limit int) List {
+	size := this.Size()
+	if offset < 0 || limit < offset || limit > size {
+		panic(fmt.Sprintf("invalid offset or limit: size=%d offset=%d limit=%d", size, offset, limit))
+	}
+	if offset == 0 && limit == size {
+		return sharedEmptyListInstance
+	}
+	if offset == limit {
+		return this
+	}
+
+	var root1, root2 node
+	if offset == 0 {
+		root1 = this.root.tail(limit)
+	} else if limit == size {
+		root1 = this.root.head(offset)
+	} else {
+		prefix := this.root.head(offset)
+		suffix := this.root.tail(limit)
+		if prefix.size() >= suffix.size() {
+			root1, root2 = prefix.appendNode(suffix)
+		} else {
+			root1, root2 = suffix.prependNode(prefix)
+		}
+	}
+	return createListNode(root1, root2)
+}
+
 func (this *listImpl) Head(length int) List {
 	size := this.Size()
 	if length < 0 || length > size {
@@ -181,10 +211,10 @@ func (this *listImpl) Head(length int) List {
 	}
 	if length == 0 {
 		return sharedEmptyListInstance
-	} else {
-		newRoot := this.root.head(length)
-		return &listImpl{newRoot}
 	}
+
+	root := this.root.head(length)
+	return &listImpl{root}
 }
 
 func (this *listImpl) Tail(index int) List {
@@ -194,10 +224,10 @@ func (this *listImpl) Tail(index int) List {
 	}
 	if index == size {
 		return sharedEmptyListInstance
-	} else {
-		newRoot := this.root.tail(index)
-		return &listImpl{newRoot}
 	}
+
+	root := this.root.tail(index)
+	return &listImpl{root}
 }
 
 func (this *listImpl) SubList(offset int, limit int) List {
@@ -207,12 +237,20 @@ func (this *listImpl) SubList(offset int, limit int) List {
 	}
 	if offset == 0 && limit == size {
 		return this
-	} else if offset == limit {
-		return sharedEmptyListInstance
-	} else {
-		newRoot := this.root.head(limit).tail(offset)
-		return &listImpl{newRoot}
 	}
+	if offset == limit {
+		return sharedEmptyListInstance
+	}
+
+	var root node
+	if offset == 0 {
+		root = this.root.head(limit)
+	} else if limit == size {
+		root = this.root.tail(offset)
+	} else {
+		root = this.root.head(limit).tail(offset)
+	}
+	return &listImpl{root}
 }
 
 func (this *listImpl) ForEach(proc Processor) {

@@ -131,6 +131,36 @@ func TestSubList(t *testing.T) {
 	}
 }
 
+func TestDeleteRange(t *testing.T) {
+	a := createListForTest(1, 256)
+	b := createListForTest(1000, 1002)
+	c := createListForTest(257, 500)
+
+	list := a.AppendList(b).AppendList(c)
+
+	del := list.DeleteRange(a.Size(), a.Size()+b.Size())
+	validateList(t, del, 500)
+
+	del = list.DeleteRange(0, list.Size()-118)
+	validateList2(t, del, 383, 500)
+
+	del = list.DeleteRange(200, list.Size())
+	validateList(t, del, 200)
+
+	a = createListForTest(1, 10)
+	b = createListForTest(1999, 2222)
+	c = createListForTest(11, 888)
+	list = a.AppendList(b).AppendList(c)
+	del = list.DeleteRange(a.Size(), a.Size()+b.Size())
+	validateList(t, del, 888)
+
+	del = a.DeleteRange(0, a.Size())
+	validateList(t, del, 0)
+
+	del = a.DeleteRange(2, 2)
+	validateList(t, del, a.Size())
+}
+
 func TestBuilder(t *testing.T) {
 	builder := CreateBuilder()
 	validateList(t, builder.Build(), 0)
