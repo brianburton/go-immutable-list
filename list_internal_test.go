@@ -70,6 +70,16 @@ func TestDelete(t *testing.T) {
 		list = list.Delete(0)
 	}
 	validateList(t, list, 512)
+	list = createListForTest(1, 800)
+	list = list.AppendList(createListForTest(10000, 12000))
+	list = list.AppendList(createListForTest(801, 2000))
+	for i := 1000; i >= 1; i-- {
+		list = list.Delete(800 + i)
+	}
+	for i := 1000; i >= 0; i-- {
+		list = list.Delete(800 + i)
+	}
+	validateList(t, list, 2000)
 }
 
 func TestBuilder(t *testing.T) {
