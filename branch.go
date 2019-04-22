@@ -199,8 +199,14 @@ func (this *branchNode) checkInvariants(report reporter, isRoot bool) {
 	if numValues < minPerNode && !isRoot {
 		report(fmt.Sprintf("branchNode: too few values: %d", numValues))
 	}
+	if computedSize := computeNodeSize(this.children); computedSize != this.nodeSize {
+		report(fmt.Sprintf("branchNode: incorrect node size: actual=%d expected=%d", computedSize, this.nodeSize))
+	}
 	for _, child := range this.children {
 		child.checkInvariants(report, false)
+		if child.height() != this.nodeHeight-1 {
+			report(fmt.Sprintf("branchNode: incorrect child depth: parent=%d child=%d", this.height(), child.height()))
+		}
 	}
 }
 
