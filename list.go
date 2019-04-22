@@ -140,7 +140,7 @@ func (this *listImpl) Insert(indexBefore int, value Object) List {
 	} else if indexBefore == currentSize {
 		return this.Append(value)
 	} else {
-		replacement, extra := this.root.insert(maxInt(0, indexBefore), value)
+		replacement, extra := this.root.insert(indexBefore, value)
 		return createListNode(replacement, extra)
 	}
 }
@@ -174,8 +174,9 @@ func (this *listImpl) ForEach(proc Processor) {
 }
 
 func (this *listImpl) Visit(offset int, limit int, visitor Visitor) {
-	offset = maxInt(0, offset)
-	limit = minInt(limit, this.root.size())
+	if offset < 0 || limit < offset || limit > this.Size() {
+		panic(fmt.Sprintf("invalid offset or limit: size=%d offset=%d limit=%d", this.Size(), offset, limit))
+	}
 	this.root.visit(offset, limit, visitor)
 }
 
