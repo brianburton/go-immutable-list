@@ -30,13 +30,16 @@ func (this *branchNode) size() int {
 }
 
 func (this *branchNode) get(index int) Object {
+	if index < 0 || index >= this.nodeSize {
+		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", this.nodeSize, index))
+	}
 	for _, child := range this.children {
 		if index < child.size() {
 			return child.get(index)
 		}
 		index -= child.size()
 	}
-	panic(fmt.Sprintf("index out of bounds: size=%d index=%d", this.nodeSize, index))
+	panic("unreachable")
 }
 
 func (this *branchNode) appendNode(other node) (node, node) {
@@ -66,7 +69,7 @@ func (this *branchNode) appendNode(other node) (node, node) {
 			children[newLen-1] = extra
 		}
 	}
-	return splitIfNecessary(children, this.size()+other.size(), this.nodeHeight)
+	return createBranchNodesFromArray(children, this.size()+other.size(), this.nodeHeight)
 }
 
 func (this *branchNode) prependNode(other node) (node, node) {
@@ -95,7 +98,7 @@ func (this *branchNode) prependNode(other node) (node, node) {
 			copy(children[2:], this.children[1:])
 		}
 	}
-	return splitIfNecessary(children, this.size()+other.size(), this.nodeHeight)
+	return createBranchNodesFromArray(children, this.size()+other.size(), this.nodeHeight)
 }
 
 func (this *branchNode) append(value Object) (node, node) {
@@ -199,7 +202,7 @@ func (this *branchNode) checkInvariants(report reporter, isRoot bool) {
 	if numValues < minPerNode && !isRoot {
 		report(fmt.Sprintf("branchNode: too few values: %d", numValues))
 	}
-	if computedSize := computeNodeSize(this.children); computedSize != this.nodeSize {
+	if computedSize := computeBranchNodeSize(this.children); computedSize != this.nodeSize {
 		report(fmt.Sprintf("branchNode: incorrect node size: actual=%d expected=%d", computedSize, this.nodeSize))
 	}
 	for _, child := range this.children {
@@ -237,10 +240,10 @@ func replaceImpl(oldSize int, nodeHeight int, oldChildren []node, replaceIndex i
 		newChildren[replaceIndex+1] = extra
 		copy(newChildren[replaceIndex+2:], oldChildren[replaceIndex+1:])
 	}
-	return splitIfNecessary(newChildren, oldSize+1, nodeHeight)
+	return createBranchNodesFromArray(newChildren, oldSize+1, nodeHeight)
 }
 
-func splitIfNecessary(newChildren []node, nodeSize int, nodeHeight int) (node, node) {
+func createBranchNodesFromArray(newChildren []node, nodeSize int, nodeHeight int) (node, node) {
 	newLen := len(newChildren)
 	if newLen <= maxPerNode {
 		return createBranchNode(newChildren, nodeSize, nodeHeight), nil
@@ -251,11 +254,11 @@ func splitIfNecessary(newChildren []node, nodeSize int, nodeHeight int) (node, n
 		second := make([]node, secondLen)
 		copy(first, newChildren[0:])
 		copy(second, newChildren[firstLen:])
-		return createBranchNode(first, computeNodeSize(first), nodeHeight), createBranchNode(second, computeNodeSize(second), nodeHeight)
+		return createBranchNode(first, computeBranchNodeSize(first), nodeHeight), createBranchNode(second, computeBranchNodeSize(second), nodeHeight)
 	}
 }
 
-func computeNodeSize(children []node) int {
+func computeBranchNodeSize(children []node) int {
 	answer := 0
 	for _, child := range children {
 		answer += child.size()

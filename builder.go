@@ -124,7 +124,7 @@ func (this *branchBuilder) computeSize() int {
 func (this *branchBuilder) createBranchNodeOfLength(count int) node {
 	children := make([]node, count)
 	copy(children, this.buffer)
-	nodeSize := computeNodeSize(children)
+	nodeSize := computeBranchNodeSize(children)
 	nodeHeight := this.height
 	return createBranchNode(children, nodeSize, nodeHeight)
 }

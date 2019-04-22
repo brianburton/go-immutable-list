@@ -15,11 +15,10 @@ func (this *leafNode) size() int {
 }
 
 func (this *leafNode) get(index int) Object {
-	if index >= 0 && index < len(this.contents) {
-		return this.contents[index]
-	} else {
+	if index < 0 || index >= len(this.contents) {
 		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", len(this.contents), index))
 	}
+	return this.contents[index]
 }
 
 func (this *leafNode) append(value Object) (node, node) {
@@ -27,21 +26,19 @@ func (this *leafNode) append(value Object) (node, node) {
 }
 
 func (this *leafNode) appendNode(other node) (node, node) {
-	return appendNodeImpl(this, other.(*leafNode))
+	return appendLeafNodeImpl(this, other.(*leafNode))
 }
 
 func (this *leafNode) prependNode(other node) (node, node) {
-	return appendNodeImpl(other.(*leafNode), this)
+	return appendLeafNodeImpl(other.(*leafNode), this)
 }
 
 func (this *leafNode) insert(indexBefore int, value Object) (node, node) {
-	currentSize := len(this.contents)
-	if currentSize < maxPerNode {
-		return createLeafNode(insertObject(indexBefore, value, this.contents)), nil
-	} else {
-		first, second := splitInsertObject(indexBefore, value, this.contents)
-		return createLeafNode(first), createLeafNode(second)
-	}
+	newContents := make([]Object, len(this.contents)+1)
+	copy(newContents, this.contents[0:indexBefore])
+	newContents[indexBefore] = value
+	copy(newContents[indexBefore+1:], this.contents[indexBefore:])
+	return createLeafNodesFromArray(newContents)
 }
 
 func (this *leafNode) set(index int, value Object) node {
@@ -67,26 +64,6 @@ func (this *leafNode) height() int {
 	return 1
 }
 
-func insertObject(insertIndex int, extra Object, from []Object) []Object {
-	newObjects := make([]Object, len(from)+1)
-	copy(newObjects[0:], from[0:insertIndex])
-	newObjects[insertIndex] = extra
-	copy(newObjects[insertIndex+1:], from[insertIndex:])
-	return newObjects
-}
-
-func splitInsertObject(insertIndex int, extra Object, from []Object) ([]Object, []Object) {
-	newContents := insertObject(insertIndex, extra, from)
-	newLen := len(newContents)
-	secondLen := newLen / 2
-	firstLen := newLen - secondLen
-	first := make([]Object, firstLen)
-	copy(first, newContents[0:firstLen])
-	second := make([]Object, secondLen)
-	copy(second, newContents[firstLen:])
-	return first, second
-}
-
 func (this *leafNode) isComplete() bool {
 	return len(this.contents) >= minPerNode
 }
@@ -94,9 +71,7 @@ func (this *leafNode) isComplete() bool {
 func (this *leafNode) mergeWith(other node) node {
 	otherLeaf := other.(*leafNode)
 	myLen := len(this.contents)
-	otherLen := len(otherLeaf.contents)
-	newLen := myLen + otherLen
-	newContents := make([]Object, newLen)
+	newContents := make([]Object, myLen+len(otherLeaf.contents))
 	copy(newContents[0:], this.contents)
 	copy(newContents[myLen:], otherLeaf.contents)
 	return createLeafNode(newContents)
@@ -137,25 +112,25 @@ func (this *leafNode) checkInvariants(report reporter, isRoot bool) {
 	}
 }
 
-func appendNodeImpl(a *leafNode, b *leafNode) (node, node) {
+func appendLeafNodeImpl(a *leafNode, b *leafNode) (node, node) {
 	myLen := len(a.contents)
-	otherLen := len(b.contents)
-	newLen := myLen + otherLen
+	newContents := make([]Object, myLen+len(b.contents))
+	copy(newContents[0:], a.contents)
+	copy(newContents[myLen:], b.contents)
+	return createLeafNodesFromArray(newContents)
+}
+
+func createLeafNodesFromArray(newContents []Object) (node, node) {
+	newLen := len(newContents)
 	if newLen <= maxPerNode {
-		newContents := make([]Object, newLen)
-		copy(newContents[0:], a.contents)
-		copy(newContents[myLen:], b.contents)
 		return createLeafNode(newContents), nil
 	} else {
-		newContents := make([]Object, newLen)
-		copy(newContents[0:], a.contents)
-		copy(newContents[myLen:], b.contents)
 		firstLen := newLen / 2
 		secondLen := newLen - firstLen
 		first := make([]Object, firstLen)
 		second := make([]Object, secondLen)
-		copy(first[0:], newContents[0:firstLen])
-		copy(second[0:], newContents[firstLen:])
+		copy(first, newContents[0:])
+		copy(second, newContents[firstLen:])
 		return createLeafNode(first), createLeafNode(second)
 	}
 }
