@@ -115,6 +115,11 @@ func (this *branchNode) append(value Object) (node, node) {
 	return replaceImpl(this.nodeSize, this.nodeHeight, this.children, lastIndex, replacement, extra)
 }
 
+func (this *branchNode) prepend(value Object) (node, node) {
+	replacement, extra := this.children[0].prepend(value)
+	return replaceImpl(this.nodeSize, this.nodeHeight, this.children, 0, replacement, extra)
+}
+
 func (this *branchNode) insert(indexBefore int, value Object) (node, node) {
 	childIndex, childOffset := findChildForIndex(indexBefore, this.children)
 	replacement, extra := this.children[childIndex].insert(childOffset, value)

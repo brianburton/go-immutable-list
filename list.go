@@ -55,6 +55,7 @@ type node interface {
 	get(index int) Object
 	getFirst() Object
 	getLast() Object
+	prepend(value Object) (node, node)
 	append(value Object) (node, node)
 	appendNode(other node) (node, node)
 	prependNode(other node) (node, node)
@@ -322,7 +323,8 @@ func (this *listImpl) IsEmpty() bool {
 }
 
 func (this *listImpl) Push(value Object) List {
-	return this.Insert(0, value)
+	newRoot, extra := this.root.prepend(value)
+	return createListNode(newRoot, extra)
 }
 
 func (this *listImpl) Pop() (Object, List) {

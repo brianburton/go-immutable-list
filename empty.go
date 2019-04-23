@@ -35,6 +35,10 @@ func (_ *emptyNode) append(value Object) (node, node) {
 	return createLeafNode([]Object{value}), nil
 }
 
+func (_ *emptyNode) prepend(value Object) (node, node) {
+	return createLeafNode([]Object{value}), nil
+}
+
 func (_ *emptyNode) appendNode(other node) (node, node) {
 	return other, nil
 }

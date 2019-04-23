@@ -44,7 +44,19 @@ func (this *leafNode) pop() (Object, node) {
 }
 
 func (this *leafNode) append(value Object) (node, node) {
-	return this.insert(len(this.contents), value)
+	currentLen := len(this.contents)
+	newContents := make([]Object, currentLen+1)
+	copy(newContents, this.contents)
+	newContents[currentLen] = value
+	return createLeafNodesFromArray(newContents)
+}
+
+func (this *leafNode) prepend(value Object) (node, node) {
+	currentLen := len(this.contents)
+	newContents := make([]Object, currentLen+1)
+	newContents[0] = value
+	copy(newContents[1:], this.contents)
+	return createLeafNodesFromArray(newContents)
 }
 
 func (this *leafNode) appendNode(other node) (node, node) {
