@@ -57,12 +57,16 @@ func (this *branchNode) appendNode(other node) (node, node) {
 	thisLen := len(this.children)
 	if thatHeight > thisHeight {
 		panic(fmt.Sprintf("appendNode called with larger node as argument: thisHeight=%d thatHeight=%d", thisHeight, thatHeight))
-	} else if thatHeight == thisHeight {
+	} else if thisHeight == thatHeight {
 		that := other.(*branchNode)
 		thatLen := len(that.children)
 		children = make([]node, thisLen+thatLen)
 		copy(children[0:], this.children)
 		copy(children[thisLen:], that.children)
+	} else if (thisHeight == thatHeight+1) && other.isComplete() {
+		children = make([]node, thisLen+1)
+		copy(children, this.children)
+		children[thisLen] = other
 	} else {
 		replacement, extra := this.children[thisLen-1].appendNode(other)
 		if extra == nil {
@@ -84,23 +88,27 @@ func (this *branchNode) prependNode(other node) (node, node) {
 	var children []node
 	thisHeight := this.height()
 	thatHeight := other.height()
-	myLen := len(this.children)
+	thisLen := len(this.children)
 	if thatHeight > thisHeight {
 		panic(fmt.Sprintf("prependNode called with larger node as argument: thisHeight=%d thatHeight=%d", thisHeight, thatHeight))
-	} else if thatHeight == thisHeight {
+	} else if thisHeight == thatHeight {
 		thatBranch := other.(*branchNode)
 		thatLen := len(thatBranch.children)
-		children = make([]node, myLen+thatLen)
+		children = make([]node, thisLen+thatLen)
 		copy(children[0:], thatBranch.children)
 		copy(children[thatLen:], this.children)
+	} else if (thisHeight == thatHeight+1) && other.isComplete() {
+		children = make([]node, thisLen+1)
+		children[0] = other
+		copy(children[1:], this.children)
 	} else {
 		replacement, extra := this.children[0].prependNode(other)
 		if extra == nil {
-			children = make([]node, myLen)
+			children = make([]node, thisLen)
 			children[0] = replacement
 			copy(children[1:], this.children[1:])
 		} else {
-			children = make([]node, myLen+1)
+			children = make([]node, thisLen+1)
 			children[0] = replacement
 			children[1] = extra
 			copy(children[2:], this.children[1:])
