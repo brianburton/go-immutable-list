@@ -196,10 +196,6 @@ func (this *branchNode) tail(index int) node {
 	newChildren := make([]node, newLen)
 	copy(newChildren, this.children[childIndex+1:])
 	newBranch := createBranchNode(newChildren, computeBranchNodeSize(newChildren), this.nodeHeight)
-	if newChild.size() == 0 {
-		return newBranch
-	}
-
 	prepended, extra := newBranch.prependNode(newChild)
 	if extra != nil {
 		panic("extra should never be non-nil here")

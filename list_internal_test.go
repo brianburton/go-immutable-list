@@ -286,6 +286,67 @@ func TestFirstLast(t *testing.T) {
 	validateValue(t, 500, list.GetLast())
 }
 
+func TestDeleteAll(t *testing.T) {
+	for length := 16; length <= 512; length += maxPerNode {
+		increment := length / 11
+		for index := 0; index < length; index += increment {
+			if index < length {
+				deleteAllImpl(t, length, index)
+				deleteAllImpl(t, length, length-index)
+			}
+		}
+	}
+}
+
+func deleteAllImpl(t *testing.T, length int, index int) {
+	b := CreateBuilder()
+	expected := make([]Object, length)
+	for i := 0; i < length; i++ {
+		value := val(i)
+		b.Add(value)
+		expected[i] = value
+	}
+	actual := b.Build()
+	validateList3(t, actual, expected)
+	for len(expected) > 0 {
+		if index >= len(expected) {
+			index = len(expected) - 1
+		}
+		actual = actual.Delete(index)
+		expected = deleteFromSlice(expected, index)
+		validateList3(t, actual, expected)
+	}
+}
+
+func TestPopAll(t *testing.T) {
+	length := 1
+	for length <= 4096 {
+		popAllImpl(t, length)
+		length = length * maxPerNode
+	}
+}
+
+func popAllImpl(t *testing.T, length int) {
+	b := CreateBuilder()
+	expected := make([]Object, length)
+	for i := 0; i < length; i++ {
+		value := val(i)
+		b.Add(value)
+		expected[i] = value
+	}
+	actual := b.Build()
+	validateList3(t, actual, expected)
+	expectedValue := 0
+	for len(expected) > 0 {
+		var deletedValue Object
+		deletedValue, actual = actual.Pop()
+		expected = deleteFromSlice(expected, 0)
+		validateValue(t, expectedValue, deletedValue)
+		expectedValue += 1
+		validateList3(t, actual, expected)
+	}
+}
+
 func copyList(list List) List {
 	answer := Create()
 	for i := list.FwdIterate(); i.Next(); {
@@ -403,6 +464,32 @@ func validateList2(t *testing.T, list List, first int, last int) {
 	})
 }
 
+func validateList3(t *testing.T, list List, expected []Object) {
+	size := len(expected)
+	if list.Size() != size {
+		t.Error(fmt.Sprintf("expected size %d but got %v", size, list.Size()))
+	}
+	ei := 0
+	list.Visit(0, list.Size(), func(index int, obj Object) {
+		if index != ei || obj.(string) != expected[index] {
+			t.Error(fmt.Sprintf("visitor expected %v/%s but got %v/%s", ei, val(ei+1), index, obj))
+		}
+		ei += 1
+	})
+	if ei != list.Size() {
+		t.Error(fmt.Sprintf("expected count %d but got %v", list.Size(), ei))
+	}
+	for i := 0; i < size; i++ {
+		actual := list.Get(i)
+		if actual != expected[i] {
+			t.Error(fmt.Sprintf("get expected %v/%s but got %v/%s", i, expected[i], i, actual))
+		}
+	}
+	list.checkInvariants(func(message string) {
+		t.Error(message)
+	})
+}
+
 func validateInsertList(t *testing.T, list List, prefixLength int, insertLength int, suffixLength int) {
 	size := prefixLength + insertLength + suffixLength
 	if list.Size() != size {
@@ -441,4 +528,19 @@ func validateRegion(t *testing.T, expected Object, list List, offset int, limit 
 			}
 		}
 	}
+}
+
+func insertToSlice(slice []Object, index int, value string) []Object {
+	answer := make([]Object, len(slice)+1)
+	copy(answer[0:], slice[0:index])
+	answer[index] = value
+	copy(answer[index+1:], slice[index:])
+	return answer
+}
+
+func deleteFromSlice(slice []Object, index int) []Object {
+	answer := make([]Object, len(slice)-1)
+	copy(answer[0:], slice[0:index])
+	copy(answer[index:], slice[index+1:])
+	return answer
 }
