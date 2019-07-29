@@ -22,6 +22,9 @@ func (this *branchNode) next(state *iteratorState) (*iteratorState, Object) {
 }
 
 func createBranchNode(children []node, nodeSize int, nodeHeight int) node {
+	if len(children) > maxPerNode {
+		panic(fmt.Sprintf("invalid children array: size=%d", len(children)))
+	}
 	return &branchNode{children, nodeSize, nodeHeight}
 }
 
@@ -236,7 +239,7 @@ func (this *branchNode) isComplete() bool {
 	return len(this.children) >= minPerNode
 }
 
-func (this *branchNode) mergeWith(other node) node {
+func (this *branchNode) mergeWith(other node) (node, node) {
 	otherBranch := other.(*branchNode)
 	myLen := len(this.children)
 	otherLen := len(otherBranch.children)
@@ -244,30 +247,22 @@ func (this *branchNode) mergeWith(other node) node {
 	copy(newChildren[0:], this.children)
 	copy(newChildren[myLen:], otherBranch.children)
 	newTotalSize := this.nodeSize + otherBranch.nodeSize
-	return createBranchNode(newChildren, newTotalSize, this.nodeHeight)
+	return createBranchNodesFromArray(newChildren, newTotalSize, this.nodeHeight)
 }
 
 func (this *branchNode) delete(index int) node {
 	childIndex, childOffset := findChildForIndex(index, this.children)
-	oldLen := len(this.children)
-	var newChildren []node
 	newChild := this.children[childIndex].delete(childOffset)
+
+	var newChildren []node
 	if newChild.isComplete() {
-		newChildren = make([]node, oldLen)
-		copy(newChildren, this.children)
-		newChildren[childIndex] = newChild
+		newChildren = this.newChildrenForReplacement(childIndex, newChild)
+	} else if childIndex == 0 {
+		first, second := newChild.mergeWith(this.children[1])
+		newChildren = this.newChildrenForMerge(0, first, second)
 	} else {
-		newChildren = make([]node, oldLen-1)
-		if childIndex == 0 {
-			newChild = newChild.mergeWith(this.children[1])
-			newChildren[0] = newChild
-			copy(newChildren[1:], this.children[2:])
-		} else {
-			newChild = this.children[childIndex-1].mergeWith(newChild)
-			copy(newChildren[0:], this.children[0:childIndex-1])
-			newChildren[childIndex-1] = newChild
-			copy(newChildren[childIndex:], this.children[childIndex+1:])
-		}
+		first, second := this.children[childIndex-1].mergeWith(newChild)
+		newChildren = this.newChildrenForMerge(childIndex-1, first, second)
 	}
 	if len(newChildren) == 1 {
 		return newChildren[0]
@@ -281,14 +276,10 @@ func (this *branchNode) pop() (Object, node) {
 
 	var newChildren []node
 	if newChild.isComplete() {
-		newChildren = make([]node, len(this.children))
-		newChildren[0] = newChild
-		copy(newChildren[1:], this.children[1:])
+		newChildren = this.newChildrenForReplacement(0, newChild)
 	} else {
-		newChildren = make([]node, len(this.children)-1)
-		newChild = newChild.mergeWith(this.children[1])
-		newChildren[0] = newChild
-		copy(newChildren[1:], this.children[2:])
+		first, second := newChild.mergeWith(this.children[1])
+		newChildren = this.newChildrenForMerge(0, first, second)
 	}
 
 	var newNode node
@@ -298,6 +289,29 @@ func (this *branchNode) pop() (Object, node) {
 		newNode = createBranchNode(newChildren, this.nodeSize-1, this.nodeHeight)
 	}
 	return value, newNode
+}
+
+func (this *branchNode) newChildrenForReplacement(index int, child node) []node {
+	newChildren := make([]node, len(this.children))
+	copy(newChildren, this.children)
+	newChildren[index] = child
+	return newChildren
+}
+
+func (this *branchNode) newChildrenForMerge(index int, first node, second node) []node {
+	var newChildren []node
+	if second != nil {
+		newChildren = make([]node, len(this.children))
+		copy(newChildren, this.children)
+		newChildren[index] = first
+		newChildren[index+1] = second
+	} else {
+		newChildren = make([]node, len(this.children)-1)
+		copy(newChildren[0:], this.children[0:index])
+		copy(newChildren[index+1:], this.children[index+2:])
+		newChildren[index] = first
+	}
+	return newChildren
 }
 
 func (this *branchNode) checkInvariants(report reporter, isRoot bool) {

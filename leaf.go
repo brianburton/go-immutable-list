@@ -7,6 +7,9 @@ type leafNode struct {
 }
 
 func createLeafNode(contents []Object) node {
+	if len(contents) > maxPerNode {
+		panic(fmt.Sprintf("invalid children array: size=%d", len(contents)))
+	}
 	return &leafNode{contents}
 }
 
@@ -134,13 +137,13 @@ func (this *leafNode) isComplete() bool {
 	return len(this.contents) >= minPerNode
 }
 
-func (this *leafNode) mergeWith(other node) node {
+func (this *leafNode) mergeWith(other node) (node, node) {
 	otherLeaf := other.(*leafNode)
 	myLen := len(this.contents)
 	newContents := make([]Object, myLen+len(otherLeaf.contents))
 	copy(newContents[0:], this.contents)
 	copy(newContents[myLen:], otherLeaf.contents)
-	return createLeafNode(newContents)
+	return createLeafNodesFromArray(newContents)
 }
 
 func (this *leafNode) delete(index int) node {

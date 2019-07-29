@@ -171,6 +171,8 @@ func TestBuilder(t *testing.T) {
 	}
 	for i := maxPerNode + 1; i <= 200; i++ {
 		builder.Add(val(i))
+		validateSize(t, builder.Size(), i)
+		validateList(t, builder.Build(), i)
 	}
 	validateSize(t, builder.Size(), 200)
 	validateList(t, builder.Build(), 200)

@@ -77,8 +77,8 @@ func (_ *emptyNode) isComplete() bool {
 	return false
 }
 
-func (_ *emptyNode) mergeWith(other node) node {
-	return other
+func (_ *emptyNode) mergeWith(other node) (node, node) {
+	return other, nil
 }
 
 func (this *emptyNode) delete(index int) node {

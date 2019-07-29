@@ -67,7 +67,7 @@ type node interface {
 	visit(start int, limit int, v Visitor)
 	height() int
 	isComplete() bool
-	mergeWith(other node) node
+	mergeWith(other node) (node, node)
 	delete(index int) node
 	set(index int, value Object) node
 	next(state *iteratorState) (*iteratorState, Object)
