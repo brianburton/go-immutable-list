@@ -29,6 +29,30 @@ func TestInsert(t *testing.T) {
 	validateList(t, list, 512)
 }
 
+func TestInsert2(t *testing.T) {
+	list := Create()
+	expected := make([]Object, 0)
+	nextValue := 1
+	for list.Size() < 4096 {
+		size := list.Size()
+		increment := size / 3
+		if increment < 3 {
+			increment = 3
+		}
+		for index := 0; index <= size/2; index += increment {
+			value := val(nextValue)
+			nextValue += 1
+
+			list = list.Insert(size-index, value)
+			expected = insertToSlice(expected, size-index, value)
+			list = list.Insert(index, value)
+			expected = insertToSlice(expected, index, value)
+			validateList3(t, list, expected)
+			size = list.Size()
+		}
+	}
+}
+
 func TestSelect(t *testing.T) {
 	list := Create()
 	for i := 1; i <= 1024; i++ {
