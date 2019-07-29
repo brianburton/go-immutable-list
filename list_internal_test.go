@@ -301,6 +301,36 @@ func TestSet(t *testing.T) {
 	validateList(t, list, 1002)
 }
 
+func TestInsertList(t *testing.T) {
+	prefix := createListForTestInsertList(val(1), 0)
+	middle := createListForTestInsertList(val(2), 0)
+	//suffix := createListForTestInsertList(val(3), 0)
+
+	inserted := prefix.InsertList(0, middle)
+	validateInsertList(t, inserted, 0, 0, 0)
+
+	middle = createListForTestInsertList(val(2), 100)
+	inserted = prefix.InsertList(0, middle)
+	validateInsertList(t, inserted, 0, 100, 0)
+
+	prefix = createListForTestInsertList(val(1), 300)
+	middle = createListForTestInsertList(val(2), 500)
+	inserted = prefix.InsertList(300, middle)
+	validateInsertList(t, inserted, 300, 500, 0)
+
+	prefix = createListForTestInsertList(val(1), 3)
+	suffix := createListForTestInsertList(val(3), minPerNode-1)
+	middle = createListForTestInsertList(val(2), minPerNode-1)
+	inserted = prefix.AppendList(suffix).InsertList(3, middle)
+	validateInsertList(t, inserted, 3, minPerNode-1, minPerNode-1)
+
+	prefix = createListForTestInsertList(val(1), 300)
+	suffix = createListForTestInsertList(val(3), 300)
+	middle = createListForTestInsertList(val(2), 500)
+	inserted = prefix.AppendList(suffix).InsertList(300, middle)
+	validateInsertList(t, inserted, 300, 500, 300)
+}
+
 func createListForTest(firstValue int, lastValue int) List {
 	builder := CreateBuilder()
 	for i := firstValue; i <= lastValue; i++ {
@@ -315,6 +345,14 @@ func createListForTestDirectly(firstValue int, lastValue int) List {
 		answer = answer.Append(val(i))
 	}
 	return answer
+}
+
+func createListForTestInsertList(value Object, length int) List {
+	answer := CreateBuilder()
+	for i := 1; i <= length; i++ {
+		answer.Add(value)
+	}
+	return answer.Build()
 }
 
 func createListForTestReverseDirectly(firstValue int, lastValue int) List {
@@ -363,6 +401,23 @@ func validateList2(t *testing.T, list List, first int, last int) {
 	})
 }
 
+func validateInsertList(t *testing.T, list List, prefixLength int, insertLength int, suffixLength int) {
+	size := prefixLength + insertLength + suffixLength
+	if list.Size() != size {
+		t.Error(fmt.Sprintf("expected size %d but got %v", size, list.Size()))
+		return
+	}
+
+	offset := 0
+	validateRegion(t, "1", list, offset, prefixLength)
+
+	offset += prefixLength
+	validateRegion(t, "2", list, offset, offset+insertLength)
+
+	offset += insertLength
+	validateRegion(t, "3", list, offset, offset+suffixLength)
+}
+
 func validateSize(t *testing.T, actual int, expected int) {
 	if actual != expected {
 		t.Error(fmt.Sprintf("expected size %d but got %v", expected, actual))
@@ -371,4 +426,17 @@ func validateSize(t *testing.T, actual int, expected int) {
 
 func val(index int) string {
 	return fmt.Sprintf("%v", index)
+}
+
+func validateRegion(t *testing.T, expected Object, list List, offset int, limit int) {
+	failed := false
+	for i := offset; i < limit; i++ {
+		actual := list.Get(i)
+		if actual != expected {
+			if !failed {
+				failed = true
+				t.Error(fmt.Sprintf("expected value %v at index %d but got %v", expected, i, actual))
+			}
+		}
+	}
 }

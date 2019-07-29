@@ -32,6 +32,7 @@ type List interface {
 	Append(value Object) List
 	AppendList(other List) List
 	Insert(indexBefore int, value Object) List
+	InsertList(indexBefore int, other List) List
 	Head(length int) List
 	Tail(index int) List
 	SubList(offset int, limit int) List
@@ -170,6 +171,20 @@ func (this *listImpl) Insert(indexBefore int, value Object) List {
 	}
 	replacement, extra := this.root.insert(indexBefore, value)
 	return createListNode(replacement, extra)
+}
+
+func (this *listImpl) InsertList(indexBefore int, other List) List {
+	currentSize := this.root.size()
+	if indexBefore < 0 || indexBefore > currentSize {
+		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", currentSize, indexBefore))
+	}
+	if indexBefore == 0 {
+		return other.AppendList(this)
+	}
+	if indexBefore == currentSize {
+		return this.AppendList(other)
+	}
+	return this.Head(indexBefore).AppendList(other).AppendList(this.Tail(indexBefore))
 }
 
 func (this *listImpl) Delete(index int) List {
