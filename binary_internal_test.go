@@ -39,6 +39,18 @@ func TestBinaryInsert(t *testing.T) {
 	}
 }
 
+func TestBinaryAppendList(t *testing.T) {
+	for loop := 1; loop <= 500; loop += 1 {
+		alen := rand.Intn(loop)
+		blen := rand.Intn(loop)
+		ab, ae := binaryAppendLists(alen)
+		bb, be := binaryAppendLists(blen)
+		expected := append(ae, be...)
+		binary := appendBinaryNodes(ab, bb)
+		validateBinaryNode(t, binary, expected)
+	}
+}
+
 func validateBinaryNode(t *testing.T, b binaryNode, e []Object) {
 	if b.size() != len(e) {
 		t.Error(fmt.Sprintf("incorrect size: b=%d e=%d", b.size(), len(e)))
@@ -51,4 +63,15 @@ func validateBinaryNode(t *testing.T, b binaryNode, e []Object) {
 	b.checkInvariants(func(message string) {
 		t.Error(message)
 	}, true)
+}
+
+func binaryAppendLists(length int) (binaryNode, []Object) {
+	expected := make([]Object, 0)
+	var binary binaryNode = &emptyLeafNode{}
+	for i := 0; i < length; i += 1 {
+		value := val(i)
+		expected = insertToSlice(expected, i, value)
+		binary = binary.insert(i, value)
+	}
+	return binary, expected
 }

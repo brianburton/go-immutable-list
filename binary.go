@@ -9,6 +9,8 @@ type binaryNode interface {
 	right() binaryNode
 	depth() int
 	size() int
+	appendNode(n binaryNode) binaryNode
+	prependNode(n binaryNode) binaryNode
 	checkInvariants(report reporter, isRoot bool)
 	rotateLeft(parentLeft binaryNode) binaryNode
 	rotateRight(parentRight binaryNode) binaryNode
@@ -77,6 +79,20 @@ func (b *binaryLeafNode) rotateRight(parentRight binaryNode) binaryNode {
 	panic("not implemented for leaf nodes")
 }
 
+func (b *binaryLeafNode) appendNode(n binaryNode) binaryNode {
+	if n.depth() != 0 {
+		panic("appending branch to leaf")
+	}
+	return createBinaryBranchNode(b, n)
+}
+
+func (b *binaryLeafNode) prependNode(n binaryNode) binaryNode {
+	if n.depth() != 0 {
+		panic("appending branch to leaf")
+	}
+	return createBinaryBranchNode(n, b)
+}
+
 type singleLeafNode struct {
 	value Object
 }
@@ -131,6 +147,20 @@ func (s *singleLeafNode) rotateRight(parentRight binaryNode) binaryNode {
 	panic("not implemented for leaf nodes")
 }
 
+func (b *singleLeafNode) appendNode(n binaryNode) binaryNode {
+	if n.depth() != 0 {
+		panic("appending branch to leaf")
+	}
+	return createBinaryBranchNode(b, n)
+}
+
+func (b *singleLeafNode) prependNode(n binaryNode) binaryNode {
+	if n.depth() != 0 {
+		panic("appending branch to leaf")
+	}
+	return createBinaryBranchNode(n, b)
+}
+
 type emptyLeafNode struct {
 }
 
@@ -174,6 +204,20 @@ func (e *emptyLeafNode) rotateLeft(parentLeft binaryNode) binaryNode {
 
 func (e *emptyLeafNode) rotateRight(parentRight binaryNode) binaryNode {
 	panic("not implemented for leaf nodes")
+}
+
+func (b *emptyLeafNode) appendNode(n binaryNode) binaryNode {
+	if n.depth() != 0 {
+		panic("appending branch to leaf")
+	}
+	return n
+}
+
+func (b *emptyLeafNode) prependNode(n binaryNode) binaryNode {
+	if n.depth() != 0 {
+		panic("appending branch to leaf")
+	}
+	return n
 }
 
 type binaryBranchNode struct {
@@ -269,6 +313,56 @@ func (b *binaryBranchNode) depth() int {
 
 func (b *binaryBranchNode) size() int {
 	return b.mySize
+}
+
+func (b *binaryBranchNode) appendNode(n binaryNode) binaryNode {
+	if n.depth() > b.depth() {
+		panic("appending larger node to smaller node")
+	}
+	if depthDiff(n, b) <= 1 {
+		return createBinaryBranchNode(b, n)
+	} else {
+		newLeft := b.left()
+		newRight := b.right().appendNode(n)
+		if newLeft.depth()-newRight.depth() > 1 {
+			return newLeft.rotateRight(newRight)
+		} else if newRight.depth()-newLeft.depth() > 1 {
+			return newRight.rotateLeft(newLeft)
+		} else {
+			return createBinaryBranchNode(newLeft, newRight)
+		}
+	}
+}
+
+func (b *binaryBranchNode) prependNode(n binaryNode) binaryNode {
+	if n.depth() > b.depth() {
+		panic("prepending larger node to smaller node")
+	}
+	if depthDiff(n, b) <= 1 {
+		return createBinaryBranchNode(n, b)
+	} else {
+		newLeft := b.left().prependNode(n)
+		newRight := b.right()
+		if newLeft.depth()-newRight.depth() > 1 {
+			return newLeft.rotateRight(newRight)
+		} else if newRight.depth()-newLeft.depth() > 1 {
+			return newRight.rotateLeft(newLeft)
+		} else {
+			return createBinaryBranchNode(newLeft, newRight)
+		}
+	}
+}
+
+func appendBinaryNodes(a binaryNode, b binaryNode) binaryNode {
+	if a.size() == 0 {
+		return b
+	} else if b.size() == 0 {
+		return a
+	} else if a.depth() < b.depth() {
+		return b.prependNode(a)
+	} else {
+		return a.appendNode(b)
+	}
 }
 
 func (b *binaryBranchNode) checkInvariants(report reporter, isRoot bool) {
