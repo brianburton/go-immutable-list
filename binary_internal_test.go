@@ -39,6 +39,44 @@ func TestBinaryInsert(t *testing.T) {
 	}
 }
 
+func TestBinaryPop(t *testing.T) {
+	b, e := binaryAppendLists(1024)
+	for len(e) > 0 {
+		var value Object
+		value, b = b.pop()
+		if value != e[0] {
+			t.Error(fmt.Sprintf("incorrect value from pop(): expected=%v actual=%v", e[0], value))
+		}
+		e = deleteFromSlice(e, 0)
+		validateBinaryNode(t, b, e)
+	}
+}
+
+func TestBinarySet(t *testing.T) {
+	b, e := binaryAppendLists(87)
+	next := 1000
+	for i := 0; i < len(e); i++ {
+		b = b.set(i, val(next))
+		e[i] = val(next)
+	}
+	validateBinaryNode(t, b, e)
+}
+
+func TestBinaryGetFirstLast(t *testing.T) {
+	expected := make([]Object, 0)
+	var binary binaryNode = &emptyLeafNode{}
+	for length := 0; length <= 30; length += 1 {
+		expected = insertToSlice(expected, length, val(length))
+		binary = binary.insert(length, val(length))
+		if expected[0] != binary.getFirst() {
+			t.Error(fmt.Sprintf("incorrect value from getFirst(): expected=%v actual=%v", expected[0], binary.getFirst()))
+		}
+		if expected[len(expected)-1] != binary.getLast() {
+			t.Error(fmt.Sprintf("incorrect value from getLast(): expected=%v actual=%v", expected[len(expected)-1], binary.getLast()))
+		}
+	}
+}
+
 func TestBinaryAppendList(t *testing.T) {
 	for loop := 1; loop <= 500; loop += 1 {
 		alen := rand.Intn(loop)

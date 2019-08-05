@@ -4,6 +4,10 @@ import "fmt"
 
 type binaryNode interface {
 	get(index int) Object
+	getFirst() Object
+	getLast() Object
+	pop() (Object, binaryNode)
+	set(index int, value Object) binaryNode
 	insert(index int, value Object) binaryNode
 	delete(index int) binaryNode
 	head(index int) binaryNode
@@ -39,6 +43,29 @@ func (b *binaryLeafNode) get(index int) Object {
 		return b.rightValue
 	default:
 		panic(fmt.Sprintf("invalid index for binaryLeafNode: %d", index))
+	}
+}
+
+func (b *binaryLeafNode) getFirst() Object {
+	return b.leftValue
+}
+
+func (b *binaryLeafNode) getLast() Object {
+	return b.rightValue
+}
+
+func (b *binaryLeafNode) pop() (Object, binaryNode) {
+	return b.leftValue, createSingleLeafNode(b.rightValue)
+}
+
+func (b *binaryLeafNode) set(index int, value Object) binaryNode {
+	switch index {
+	case 0:
+		return createBinaryLeafNode(value, b.rightValue)
+	case 1:
+		return createBinaryLeafNode(b.leftValue, value)
+	default:
+		panic(fmt.Sprintf("invalid index for binaryLeftNode: %d", index))
 	}
 }
 
@@ -151,6 +178,27 @@ func (s *singleLeafNode) get(index int) Object {
 	}
 }
 
+func (b *singleLeafNode) getFirst() Object {
+	return b.value
+}
+
+func (b *singleLeafNode) getLast() Object {
+	return b.value
+}
+
+func (b *singleLeafNode) pop() (Object, binaryNode) {
+	return b.value, createEmptyBinaryNode()
+}
+
+func (b *singleLeafNode) set(index int, value Object) binaryNode {
+	switch index {
+	case 0:
+		return createSingleLeafNode(value)
+	default:
+		panic(fmt.Sprintf("invalid index for binaryLeftNode: %d", index))
+	}
+}
+
 func (s *singleLeafNode) insert(index int, value Object) binaryNode {
 	switch index {
 	case 0:
@@ -243,6 +291,22 @@ func createEmptyBinaryNode() binaryNode {
 }
 
 func (e *emptyLeafNode) get(index int) Object {
+	panic("not implemented for emptyLeafNodes")
+}
+
+func (b *emptyLeafNode) getFirst() Object {
+	panic("not implemented for emptyLeafNodes")
+}
+
+func (b *emptyLeafNode) getLast() Object {
+	panic("not implemented for emptyLeafNodes")
+}
+
+func (b *emptyLeafNode) pop() (Object, binaryNode) {
+	panic("not implemented for emptyLeafNodes")
+}
+
+func (b *emptyLeafNode) set(index int, value Object) binaryNode {
 	panic("not implemented for emptyLeafNodes")
 }
 
@@ -368,6 +432,32 @@ func (b *binaryBranchNode) get(index int) Object {
 		return b.leftChild.get(index)
 	} else {
 		return b.rightChild.get(index - leftSize)
+	}
+}
+
+func (b *binaryBranchNode) getFirst() Object {
+	return b.leftChild.getFirst()
+}
+
+func (b *binaryBranchNode) getLast() Object {
+	return b.rightChild.getLast()
+}
+
+func (b *binaryBranchNode) pop() (Object, binaryNode) {
+	value, newLeft := b.leftChild.pop()
+	if newLeft.size() == 0 {
+		return value, b.rightChild
+	} else {
+		return value, createBalancedBinaryBranchNode(newLeft, b.rightChild)
+	}
+}
+
+func (b *binaryBranchNode) set(index int, value Object) binaryNode {
+	leftSize := b.leftChild.size()
+	if index < leftSize {
+		return createBinaryBranchNode(b.leftChild.set(index, value), b.rightChild)
+	} else {
+		return createBinaryBranchNode(b.leftChild, b.rightChild.set(index-leftSize, value))
 	}
 }
 
