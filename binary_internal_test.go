@@ -67,10 +67,24 @@ func TestBinaryHead(t *testing.T) {
 	for loop := 1; loop <= 500; loop += 1 {
 		binary, expected := binaryAppendLists(loop)
 		for binary.size() > 0 {
-			index := rand.Intn(binary.size())
+			index := rand.Intn(binary.size() + 1)
 			binary = binary.head(index)
 			for len(expected) > index {
 				expected = deleteFromSlice(expected, index)
+			}
+			validateBinaryNode(t, binary, expected)
+		}
+	}
+}
+
+func TestBinaryTail(t *testing.T) {
+	for loop := 1; loop <= 500; loop += 1 {
+		binary, expected := binaryAppendLists(loop)
+		for binary.size() > 0 {
+			index := rand.Intn(binary.size() + 1)
+			binary = binary.tail(index)
+			for i := 0; i < index; i++ {
+				expected = deleteFromSlice(expected, 0)
 			}
 			validateBinaryNode(t, binary, expected)
 		}
