@@ -6,6 +6,7 @@ type binaryNode interface {
 	get(index int) Object
 	insert(index int, value Object) binaryNode
 	delete(index int) binaryNode
+	head(index int) binaryNode
 	left() binaryNode
 	right() binaryNode
 	depth() int
@@ -61,6 +62,19 @@ func (b *binaryLeafNode) delete(index int) binaryNode {
 		return createSingleLeafNode(b.leftValue)
 	case 2:
 		return createEmptyBinaryNode()
+	default:
+		panic(fmt.Sprintf("invalid index for binaryLeftNode: %d", index))
+	}
+}
+
+func (b *binaryLeafNode) head(index int) binaryNode {
+	switch index {
+	case 0:
+		return createEmptyBinaryNode()
+	case 1:
+		return createSingleLeafNode(b.leftValue)
+	case 2:
+		return b
 	default:
 		panic(fmt.Sprintf("invalid index for binaryLeftNode: %d", index))
 	}
@@ -142,6 +156,17 @@ func (b *singleLeafNode) delete(index int) binaryNode {
 	}
 }
 
+func (b *singleLeafNode) head(index int) binaryNode {
+	switch index {
+	case 0:
+		return createEmptyBinaryNode()
+	case 1:
+		return b
+	default:
+		panic(fmt.Sprintf("invalid index for binaryLeftNode: %d", index))
+	}
+}
+
 func (s *singleLeafNode) left() binaryNode {
 	panic("not implemented for leaf nodes")
 }
@@ -206,6 +231,14 @@ func (e *emptyLeafNode) insert(index int, value Object) binaryNode {
 
 func (b *emptyLeafNode) delete(index int) binaryNode {
 	panic("not implemented for emptyLeafNodes")
+}
+
+func (b *emptyLeafNode) head(index int) binaryNode {
+	if index == 0 {
+		return b
+	} else {
+		panic(fmt.Sprintf("invalid index for emptyLeafNode: %d", index))
+	}
 }
 
 func (e *emptyLeafNode) left() binaryNode {
@@ -352,6 +385,16 @@ func (b *binaryBranchNode) delete(index int) binaryNode {
 		}
 	}
 	return createBalancedBinaryBranchNode(newLeft, newRight)
+}
+
+func (b *binaryBranchNode) head(index int) binaryNode {
+	leftSize := b.leftChild.size()
+	if index < leftSize {
+		return b.leftChild.head(index)
+	} else {
+		newRight := b.rightChild.head(index - leftSize)
+		return appendBinaryNodes(b.leftChild, newRight)
+	}
 }
 
 func (b *binaryBranchNode) left() binaryNode {

@@ -63,6 +63,20 @@ func TestBinaryDelete(t *testing.T) {
 	}
 }
 
+func TestBinaryHead(t *testing.T) {
+	for loop := 1; loop <= 500; loop += 1 {
+		binary, expected := binaryAppendLists(loop)
+		for binary.size() > 0 {
+			index := rand.Intn(binary.size())
+			binary = binary.head(index)
+			for len(expected) > index {
+				expected = deleteFromSlice(expected, index)
+			}
+			validateBinaryNode(t, binary, expected)
+		}
+	}
+}
+
 func validateBinaryNode(t *testing.T, b binaryNode, e []Object) {
 	if b.size() != len(e) {
 		t.Error(fmt.Sprintf("incorrect size: b=%d e=%d", b.size(), len(e)))
