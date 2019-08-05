@@ -5,6 +5,7 @@ import "fmt"
 type binaryNode interface {
 	get(index int) Object
 	insert(index int, value Object) binaryNode
+	delete(index int) binaryNode
 	left() binaryNode
 	right() binaryNode
 	depth() int
@@ -47,6 +48,19 @@ func (b *binaryLeafNode) insert(index int, value Object) binaryNode {
 		return createBinaryBranchNode(createSingleLeafNode(b.leftValue), createBinaryLeafNode(value, b.rightValue))
 	case 2:
 		return createBinaryBranchNode(b, createSingleLeafNode(value))
+	default:
+		panic(fmt.Sprintf("invalid index for binaryLeftNode: %d", index))
+	}
+}
+
+func (b *binaryLeafNode) delete(index int) binaryNode {
+	switch index {
+	case 0:
+		return createSingleLeafNode(b.rightValue)
+	case 1:
+		return createSingleLeafNode(b.leftValue)
+	case 2:
+		return createEmptyBinaryNode()
 	default:
 		panic(fmt.Sprintf("invalid index for binaryLeftNode: %d", index))
 	}
@@ -120,6 +134,14 @@ func (s *singleLeafNode) insert(index int, value Object) binaryNode {
 	}
 }
 
+func (b *singleLeafNode) delete(index int) binaryNode {
+	if index == 0 {
+		return createEmptyBinaryNode()
+	} else {
+		panic(fmt.Sprintf("invalid index for binaryLeftNode: %d", index))
+	}
+}
+
 func (s *singleLeafNode) left() binaryNode {
 	panic("not implemented for leaf nodes")
 }
@@ -164,6 +186,12 @@ func (b *singleLeafNode) prependNode(n binaryNode) binaryNode {
 type emptyLeafNode struct {
 }
 
+var sharedEmptyBinaryNode binaryNode = &emptyLeafNode{}
+
+func createEmptyBinaryNode() binaryNode {
+	return sharedEmptyBinaryNode
+}
+
 func (e *emptyLeafNode) get(index int) Object {
 	panic("not implemented for emptyLeafNodes")
 }
@@ -174,6 +202,10 @@ func (e *emptyLeafNode) insert(index int, value Object) binaryNode {
 	} else {
 		panic(fmt.Sprintf("invalid index for emptyLeafNode: %d", index))
 	}
+}
+
+func (b *emptyLeafNode) delete(index int) binaryNode {
+	panic("not implemented for emptyLeafNodes")
 }
 
 func (e *emptyLeafNode) left() binaryNode {
@@ -254,6 +286,16 @@ func createBinaryBranchNode(leftChild binaryNode, rightChild binaryNode) binaryN
 	}
 }
 
+func createBalancedBinaryBranchNode(left binaryNode, right binaryNode) binaryNode {
+	if left.depth()-right.depth() > 1 {
+		return left.rotateRight(right)
+	} else if right.depth()-left.depth() > 1 {
+		return right.rotateLeft(left)
+	} else {
+		return createBinaryBranchNode(left, right)
+	}
+}
+
 func (b *binaryBranchNode) get(index int) Object {
 	leftSize := b.leftChild.size()
 	if index < leftSize {
@@ -264,39 +306,52 @@ func (b *binaryBranchNode) get(index int) Object {
 }
 
 func (b *binaryBranchNode) rotateLeft(parentLeft binaryNode) binaryNode {
-	if b.left().depth() > b.right().depth() {
-		return createBinaryBranchNode(createBinaryBranchNode(parentLeft, b.left().left()), createBinaryBranchNode(b.left().right(), b.right()))
+	if b.leftChild.depth() > b.rightChild.depth() {
+		return createBinaryBranchNode(createBinaryBranchNode(parentLeft, b.leftChild.left()), createBinaryBranchNode(b.leftChild.right(), b.rightChild))
 	} else {
-		return createBinaryBranchNode(createBinaryBranchNode(parentLeft, b.left()), b.right())
+		return createBinaryBranchNode(createBinaryBranchNode(parentLeft, b.leftChild), b.rightChild)
 	}
 }
 
 func (b *binaryBranchNode) rotateRight(parentRight binaryNode) binaryNode {
-	if b.left().depth() >= b.right().depth() {
-		return createBinaryBranchNode(b.left(), createBinaryBranchNode(b.right(), parentRight))
+	if b.leftChild.depth() >= b.rightChild.depth() {
+		return createBinaryBranchNode(b.leftChild, createBinaryBranchNode(b.rightChild, parentRight))
 	} else {
-		return createBinaryBranchNode(createBinaryBranchNode(b.left(), b.right().left()), createBinaryBranchNode(b.right().right(), parentRight))
+		return createBinaryBranchNode(createBinaryBranchNode(b.leftChild, b.rightChild.left()), createBinaryBranchNode(b.rightChild.right(), parentRight))
 	}
 }
 
 func (b *binaryBranchNode) insert(index int, value Object) binaryNode {
 	var newLeft binaryNode
 	var newRight binaryNode
-	leftSize := b.left().size()
+	leftSize := b.leftChild.size()
 	if index < leftSize {
-		newLeft = b.left().insert(index, value)
-		newRight = b.right()
+		newLeft = b.leftChild.insert(index, value)
+		newRight = b.rightChild
 	} else {
-		newLeft = b.left()
-		newRight = b.right().insert(index-leftSize, value)
+		newLeft = b.leftChild
+		newRight = b.rightChild.insert(index-leftSize, value)
 	}
-	if newLeft.depth()-newRight.depth() > 1 {
-		return newLeft.rotateRight(newRight)
-	} else if newRight.depth()-newLeft.depth() > 1 {
-		return newRight.rotateLeft(newLeft)
+	return createBalancedBinaryBranchNode(newLeft, newRight)
+}
+
+func (b *binaryBranchNode) delete(index int) binaryNode {
+	var newLeft, newRight binaryNode
+	leftSize := b.leftChild.size()
+	if index < leftSize {
+		newLeft = b.leftChild.delete(index)
+		newRight = b.rightChild
+		if newLeft.size() == 0 {
+			return newRight
+		}
 	} else {
-		return createBinaryBranchNode(newLeft, newRight)
+		newLeft = b.leftChild
+		newRight = b.rightChild.delete(index - leftSize)
+		if newRight.size() == 0 {
+			return newLeft
+		}
 	}
+	return createBalancedBinaryBranchNode(newLeft, newRight)
 }
 
 func (b *binaryBranchNode) left() binaryNode {
@@ -322,8 +377,8 @@ func (b *binaryBranchNode) appendNode(n binaryNode) binaryNode {
 	if depthDiff(n, b) <= 1 {
 		return createBinaryBranchNode(b, n)
 	} else {
-		newLeft := b.left()
-		newRight := b.right().appendNode(n)
+		newLeft := b.leftChild
+		newRight := b.rightChild.appendNode(n)
 		if newLeft.depth()-newRight.depth() > 1 {
 			return newLeft.rotateRight(newRight)
 		} else if newRight.depth()-newLeft.depth() > 1 {
@@ -341,8 +396,8 @@ func (b *binaryBranchNode) prependNode(n binaryNode) binaryNode {
 	if depthDiff(n, b) <= 1 {
 		return createBinaryBranchNode(n, b)
 	} else {
-		newLeft := b.left().prependNode(n)
-		newRight := b.right()
+		newLeft := b.leftChild.prependNode(n)
+		newRight := b.rightChild
 		if newLeft.depth()-newRight.depth() > 1 {
 			return newLeft.rotateRight(newRight)
 		} else if newRight.depth()-newLeft.depth() > 1 {
@@ -366,15 +421,15 @@ func appendBinaryNodes(a binaryNode, b binaryNode) binaryNode {
 }
 
 func (b *binaryBranchNode) checkInvariants(report reporter, isRoot bool) {
-	if b.depth() != maxDepth(b.left(), b.right())+1 {
-		report(fmt.Sprintf("incorrect depth: depth=%d leftDepth=%d rightDepth=%d", b.depth(), b.left().depth(), b.right().depth()))
+	if b.depth() != maxDepth(b.leftChild, b.rightChild)+1 {
+		report(fmt.Sprintf("incorrect depth: depth=%d leftDepth=%d rightDepth=%d", b.depth(), b.leftChild.depth(), b.rightChild.depth()))
 	}
-	if depthDiff(b.left(), b.right()) > 1 {
-		report(fmt.Sprintf("invalid child depths: leftDepth=%d rightDepth=%d", b.left().depth(), b.right().depth()))
+	if depthDiff(b.leftChild, b.rightChild) > 1 {
+		report(fmt.Sprintf("invalid child depths: leftDepth=%d rightDepth=%d", b.leftChild.depth(), b.rightChild.depth()))
 	}
-	if b.size() != b.left().size()+b.right().size() {
-		report(fmt.Sprintf("incorrect size: size=%d leftSize=%d rightSize=%d", b.size(), b.left().size(), b.right().size()))
+	if b.size() != b.leftChild.size()+b.rightChild.size() {
+		report(fmt.Sprintf("incorrect size: size=%d leftSize=%d rightSize=%d", b.size(), b.leftChild.size(), b.rightChild.size()))
 	}
-	b.left().checkInvariants(report, false)
-	b.right().checkInvariants(report, false)
+	b.leftChild.checkInvariants(report, false)
+	b.rightChild.checkInvariants(report, false)
 }
