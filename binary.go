@@ -417,9 +417,10 @@ func createBinaryBranchNode(leftChild binaryNode, rightChild binaryNode) binaryN
 }
 
 func createBalancedBinaryBranchNode(left binaryNode, right binaryNode) binaryNode {
-	if left.depth()-right.depth() > 1 {
+	diff := left.depth() - right.depth()
+	if diff > 1 {
 		return left.rotateRight(right)
-	} else if right.depth()-left.depth() > 1 {
+	} else if diff < -1 {
 		return right.rotateLeft(left)
 	} else {
 		return createBinaryBranchNode(left, right)
@@ -553,15 +554,7 @@ func (b *binaryBranchNode) appendNode(n binaryNode) binaryNode {
 	if depthDiff(n, b) <= 1 {
 		return createBinaryBranchNode(b, n)
 	} else {
-		newLeft := b.leftChild
-		newRight := b.rightChild.appendNode(n)
-		if newLeft.depth()-newRight.depth() > 1 {
-			return newLeft.rotateRight(newRight)
-		} else if newRight.depth()-newLeft.depth() > 1 {
-			return newRight.rotateLeft(newLeft)
-		} else {
-			return createBinaryBranchNode(newLeft, newRight)
-		}
+		return createBalancedBinaryBranchNode(b.leftChild, b.rightChild.appendNode(n))
 	}
 }
 
@@ -572,15 +565,7 @@ func (b *binaryBranchNode) prependNode(n binaryNode) binaryNode {
 	if depthDiff(n, b) <= 1 {
 		return createBinaryBranchNode(n, b)
 	} else {
-		newLeft := b.leftChild.prependNode(n)
-		newRight := b.rightChild
-		if newLeft.depth()-newRight.depth() > 1 {
-			return newLeft.rotateRight(newRight)
-		} else if newRight.depth()-newLeft.depth() > 1 {
-			return newRight.rotateLeft(newLeft)
-		} else {
-			return createBinaryBranchNode(newLeft, newRight)
-		}
+		return createBalancedBinaryBranchNode(b.leftChild.prependNode(n), b.rightChild)
 	}
 }
 
