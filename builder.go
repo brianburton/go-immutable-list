@@ -9,13 +9,13 @@ type Builder interface {
 type leafBuilder struct {
 	parent *branchBuilder
 	count  int // only zero if Add() has never been called
-	buffer [binaryArrayNodeMaxValues]Object
+	buffer [maxValuesPerLeaf]Object
 }
 
 type branchBuilder struct {
 	parent *branchBuilder
-	left   binaryNode // never nil
-	right  binaryNode // may be nil
+	left   node // never nil
+	right  node // may be nil
 }
 
 func CreateBuilder() Builder {
@@ -23,7 +23,7 @@ func CreateBuilder() Builder {
 }
 
 func (this *leafBuilder) Add(value Object) Builder {
-	if this.count == binaryArrayNodeMaxValues {
+	if this.count == maxValuesPerLeaf {
 		leafNode := this.createLeafFromBuffer()
 		if this.parent == nil {
 			this.parent = createBranchBuilder(leafNode)
@@ -48,7 +48,7 @@ func (this *leafBuilder) Size() int {
 }
 
 func (this *leafBuilder) Build() List {
-	var root binaryNode
+	var root node
 	if this.count == 0 {
 		root = createEmptyLeafNode()
 	} else if this.parent == nil {
@@ -59,21 +59,21 @@ func (this *leafBuilder) Build() List {
 	return createListNode(root)
 }
 
-func (this *leafBuilder) createLeafFromBuffer() binaryNode {
+func (this *leafBuilder) createLeafFromBuffer() node {
 	values := make([]Object, this.count)
 	copy(values[0:], this.buffer[0:this.count])
 	return createMultiValueLeafNode(values)
 }
 
-func createBranchBuilder(left binaryNode) *branchBuilder {
+func createBranchBuilder(left node) *branchBuilder {
 	return &branchBuilder{left: left}
 }
 
-func (this *branchBuilder) addChild(node binaryNode) {
+func (this *branchBuilder) addChild(node node) {
 	if this.right == nil {
 		this.right = node
 	} else {
-		branchNode := createBinaryBranchNode(this.left, this.right)
+		branchNode := createBranchNode(this.left, this.right)
 		if this.parent == nil {
 			this.parent = createBranchBuilder(branchNode)
 		} else {
@@ -84,12 +84,12 @@ func (this *branchBuilder) addChild(node binaryNode) {
 	}
 }
 
-func (this *branchBuilder) build(extra binaryNode) binaryNode {
-	var answer binaryNode
+func (this *branchBuilder) build(extra node) node {
+	var answer node
 	if this.right == nil {
 		answer = this.left
 	} else {
-		answer = createBinaryBranchNode(this.left, this.right)
+		answer = createBranchNode(this.left, this.right)
 	}
 	if this.parent != nil {
 		answer = this.parent.build(answer)

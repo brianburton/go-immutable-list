@@ -42,16 +42,16 @@ type List interface {
 }
 
 type listImpl struct {
-	root binaryNode
+	root node
 }
 
-var sharedEmptyListInstance List = &listImpl{sharedEmptyBinaryNode}
+var sharedEmptyListInstance List = &listImpl{sharedEmptyNode}
 
 func Create() List {
 	return sharedEmptyListInstance
 }
 
-func createListNode(root binaryNode) List {
+func createListNode(root node) List {
 	if root.size() == 0 {
 		return sharedEmptyListInstance
 	} else {
@@ -60,13 +60,7 @@ func createListNode(root binaryNode) List {
 }
 
 func (this *listImpl) FwdIterate() Iterator {
-	var state *binaryIteratorState
-	if this.root.size() == 0 {
-		state = nil
-	} else {
-		state = &binaryIteratorState{currentNode: this.root}
-	}
-	return &binaryIteratorImpl{state: state}
+	return createIterator(this.root)
 }
 
 func (this *listImpl) Size() int {
@@ -91,7 +85,7 @@ func (this *listImpl) Append(value Object) List {
 
 func (this *listImpl) AppendList(other List) List {
 	otherImpl := other.(*listImpl)
-	return createListNode(appendBinaryNodes(this.root, otherImpl.root))
+	return createListNode(appendNodes(this.root, otherImpl.root))
 }
 
 func (this *listImpl) Insert(indexBefore int, value Object) List {
@@ -128,13 +122,13 @@ func (this *listImpl) DeleteRange(offset int, limit int) List {
 		return this
 	}
 
-	var root binaryNode
+	var root node
 	if offset == 0 {
 		root = this.root.tail(limit)
 	} else if limit == size {
 		root = this.root.head(offset)
 	} else {
-		root = appendBinaryNodes(this.root.head(offset), this.root.tail(limit))
+		root = appendNodes(this.root.head(offset), this.root.tail(limit))
 	}
 	return createListNode(root)
 }
@@ -159,7 +153,7 @@ func (this *listImpl) SubList(offset int, limit int) List {
 		return sharedEmptyListInstance
 	}
 
-	var root binaryNode
+	var root node
 	if offset == 0 {
 		root = this.root.head(limit)
 	} else if limit == size {

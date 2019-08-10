@@ -112,7 +112,7 @@ func TestHead(t *testing.T) {
 		truncated := list.Head(i)
 		validateList(t, truncated, i)
 	}
-	list = createListForTest(1, binaryArrayNodeMaxValues)
+	list = createListForTest(1, maxValuesPerLeaf)
 	for i := list.Size(); i >= 0; i-- {
 		list = list.Head(i)
 		validateList(t, list, i)
@@ -125,10 +125,10 @@ func TestTail(t *testing.T) {
 		truncated := list.Tail(i)
 		validateList2(t, truncated, i+1, list.Size())
 	}
-	list = createListForTest(1, binaryArrayNodeMaxValues)
-	for i := 1; i <= binaryArrayNodeMaxValues; i++ {
+	list = createListForTest(1, maxValuesPerLeaf)
+	for i := 1; i <= maxValuesPerLeaf; i++ {
 		list = list.Tail(1)
-		validateList2(t, list, i+1, binaryArrayNodeMaxValues)
+		validateList2(t, list, i+1, maxValuesPerLeaf)
 	}
 }
 
@@ -188,12 +188,12 @@ func TestDeleteRange(t *testing.T) {
 func TestBuilder(t *testing.T) {
 	builder := CreateBuilder()
 	validateList(t, builder.Build(), 0)
-	for i := 1; i <= binaryArrayNodeMaxValues; i++ {
+	for i := 1; i <= maxValuesPerLeaf; i++ {
 		builder.Add(val(i))
 		validateSize(t, builder.Size(), i)
 		validateList(t, builder.Build(), i)
 	}
-	for i := binaryArrayNodeMaxValues + 1; i <= 200; i++ {
+	for i := maxValuesPerLeaf + 1; i <= 200; i++ {
 		builder.Add(val(i))
 		validateSize(t, builder.Size(), i)
 		validateList(t, builder.Build(), i)
@@ -311,7 +311,7 @@ func TestFirstLast(t *testing.T) {
 }
 
 func TestDeleteAll(t *testing.T) {
-	for length := 16; length <= 512; length += binaryArrayNodeMaxValues {
+	for length := 16; length <= 512; length += maxValuesPerLeaf {
 		increment := length / 11
 		for index := 0; index < length; index += increment {
 			if index < length {
@@ -346,7 +346,7 @@ func TestPopAll(t *testing.T) {
 	length := 1
 	for length <= 4096 {
 		popAllImpl(t, length)
-		length = length * binaryArrayNodeMaxValues
+		length = length * maxValuesPerLeaf
 	}
 }
 
@@ -406,10 +406,10 @@ func TestInsertList(t *testing.T) {
 	validateInsertList(t, inserted, 300, 500, 0)
 
 	prefix = createListForTestInsertList(val(1), 3)
-	suffix := createListForTestInsertList(val(3), binaryArrayNodeMaxValues-1)
-	middle = createListForTestInsertList(val(2), binaryArrayNodeMaxValues-1)
+	suffix := createListForTestInsertList(val(3), maxValuesPerLeaf-1)
+	middle = createListForTestInsertList(val(2), maxValuesPerLeaf-1)
 	inserted = prefix.AppendList(suffix).InsertList(3, middle)
-	validateInsertList(t, inserted, 3, binaryArrayNodeMaxValues-1, binaryArrayNodeMaxValues-1)
+	validateInsertList(t, inserted, 3, maxValuesPerLeaf-1, maxValuesPerLeaf-1)
 
 	prefix = createListForTestInsertList(val(1), 300)
 	suffix = createListForTestInsertList(val(3), 300)
