@@ -21,6 +21,40 @@ type binaryNode interface {
 	checkInvariants(report reporter, isRoot bool)
 	rotateLeft(parentLeft binaryNode) binaryNode
 	rotateRight(parentRight binaryNode) binaryNode
+	next(state *binaryIteratorState) (*binaryIteratorState, Object)
+}
+
+type binaryIteratorState struct {
+	next         *binaryIteratorState
+	currentNode  binaryNode
+	currentIndex int
+}
+
+type binaryIteratorImpl struct {
+	state *binaryIteratorState
+	value Object
+}
+
+func createBinaryIterator(n binaryNode) Iterator {
+	var state *binaryIteratorState
+	if n.size() == 0 {
+		state = nil
+	} else {
+		state = &binaryIteratorState{currentNode: n}
+	}
+	return &binaryIteratorImpl{state: state}
+}
+
+func (this *binaryIteratorImpl) Next() bool {
+	if this.state == nil {
+		return false
+	}
+	this.state, this.value = this.state.currentNode.next(this.state)
+	return true
+}
+
+func (this *binaryIteratorImpl) Get() Object {
+	return this.value
 }
 
 const (
@@ -209,6 +243,19 @@ func (a *arrayLeafNode) prependNode(n binaryNode) binaryNode {
 	return createBinaryBranchNode(n, a)
 }
 
+func (a *arrayLeafNode) next(state *binaryIteratorState) (*binaryIteratorState, Object) {
+	if state == nil || state.currentNode != a {
+		state = &binaryIteratorState{currentNode: a, next: state}
+	}
+	value := a.values[state.currentIndex]
+	state.currentIndex++
+	if state.currentIndex == len(a.values) {
+		return state.next, value
+	} else {
+		return state, value
+	}
+}
+
 func appendLeafNodeValues(combinedSize int, a *arrayLeafNode, b *arrayLeafNode) binaryNode {
 	values := make([]Object, combinedSize)
 	copy(values[0:], a.values)
@@ -330,6 +377,10 @@ func (b *emptyLeafNode) prependNode(n binaryNode) binaryNode {
 		panic("appending branch to leaf")
 	}
 	return n
+}
+
+func (e *emptyLeafNode) next(state *binaryIteratorState) (*binaryIteratorState, Object) {
+	return nil, nil
 }
 
 type binaryBranchNode struct {
@@ -543,4 +594,20 @@ func (b *binaryBranchNode) checkInvariants(report reporter, isRoot bool) {
 	}
 	b.leftChild.checkInvariants(report, false)
 	b.rightChild.checkInvariants(report, false)
+}
+
+func (b *binaryBranchNode) next(state *binaryIteratorState) (*binaryIteratorState, Object) {
+	if state == nil || state.currentNode != b {
+		state = &binaryIteratorState{currentNode: b, next: state}
+	}
+	switch state.currentIndex {
+	case 0:
+		state.currentIndex = 1
+		return b.leftChild.next(state)
+	case 1:
+		state.currentIndex = 2
+		return b.rightChild.next(state.next)
+	default:
+		panic("invalid index in iterator state")
+	}
 }

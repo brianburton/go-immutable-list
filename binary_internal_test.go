@@ -129,6 +129,22 @@ func TestBinaryTail(t *testing.T) {
 	}
 }
 
+func TestBinaryIterator(t *testing.T) {
+	for length := 0; length <= 1024; length++ {
+		expected := make([]Object, 0)
+		var binary binaryNode = &emptyLeafNode{}
+		for i := 0; i <= length; i += 1 {
+			expected = insertToSlice(expected, i, val(i))
+			binary = binary.insert(i, val(i))
+		}
+		actual := createEmptyLeafNode()
+		for i := createBinaryIterator(binary); i.Next(); {
+			actual = actual.insert(actual.size(), i.Get())
+		}
+		validateBinaryNode(t, actual, expected)
+	}
+}
+
 func BenchmarkBinaryGet1000(b *testing.B) {
 	benchmarkBinaryGet(1000, b)
 }
