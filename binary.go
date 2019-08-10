@@ -19,7 +19,7 @@ type binaryNode interface {
 	pop() (Object, binaryNode)
 	depth() int
 	forEach(proc Processor)
-	visit(start int, limit int, v Visitor)
+	visit(base int, start int, limit int, v Visitor)
 	checkInvariants(report reporter, isRoot bool)
 	rotateLeft(parentLeft binaryNode) binaryNode
 	rotateRight(parentRight binaryNode) binaryNode
@@ -187,13 +187,13 @@ func (a *arrayLeafNode) forEach(proc Processor) {
 	}
 }
 
-func (a *arrayLeafNode) visit(start int, limit int, v Visitor) {
-	currentSize := len(a.values)
-	if start < 0 || start > currentSize {
-		panic(fmt.Sprintf("invalid index for arrayLeafNode: %d", start))
+func (a *arrayLeafNode) visit(base int, start int, limit int, v Visitor) {
+	size := len(a.values)
+	if limit > size {
+		limit = size
 	}
 	for i := start; i < limit; i++ {
-		v(i, a.values[i])
+		v(base+i, a.values[i])
 	}
 }
 
@@ -374,10 +374,7 @@ func (e *emptyLeafNode) prepend(value Object) binaryNode {
 func (e *emptyLeafNode) forEach(proc Processor) {
 }
 
-func (e *emptyLeafNode) visit(start int, limit int, v Visitor) {
-	if start != 0 || limit != 0 {
-		panic(fmt.Sprintf("invalid index for emptyLeafNode: start=%d limit=%d", start, limit))
-	}
+func (e *emptyLeafNode) visit(base int, start int, limit int, v Visitor) {
 }
 
 func (e *emptyLeafNode) left() binaryNode {
@@ -448,13 +445,23 @@ func (b *binaryBranchNode) forEach(proc Processor) {
 	b.rightChild.forEach(proc)
 }
 
-func (b *binaryBranchNode) visit(start int, limit int, v Visitor) {
-	leftSize := b.leftChild.size()
-	if start < leftSize {
-		b.leftChild.visit(start, limit, v)
+func (b *binaryBranchNode) visit(base int, start int, limit int, v Visitor) {
+	visitNode(b.leftChild, 0, base, start, limit, v)
+	visitNode(b.rightChild, b.leftChild.size(), base, start, limit, v)
+}
+
+func visitNode(node binaryNode, offset int, base int, start int, limit int, v Visitor) {
+	base += offset
+	start -= offset
+	limit -= offset
+	if start < 0 {
+		start = 0
 	}
-	if limit > leftSize {
-		b.rightChild.visit(start-leftSize, limit-leftSize, v)
+	if limit > node.size() {
+		limit = node.size()
+	}
+	if limit > start {
+		node.visit(base, start, limit, v)
 	}
 }
 

@@ -1,10 +1,5 @@
 package immutableList
 
-const (
-	minBranchBuilderHeight = 2
-	maxPerBuilderNode      = minPerNode + maxPerNode
-)
-
 type Builder interface {
 	Add(value Object) Builder
 	Size() int
@@ -12,24 +7,23 @@ type Builder interface {
 }
 
 type builderImpl struct {
-	leaves *leafBuilder
+	leaves leafBuilder
 }
 
 type leafBuilder struct {
 	parent *branchBuilder
-	count  int
-	buffer []Object
+	count  int // only zero if addValue() has never been called
+	buffer [binaryArrayNodeMaxValues]Object
 }
 
 type branchBuilder struct {
 	parent *branchBuilder
-	count  int
-	height int
-	buffer []node
+	left   binaryNode // never nil
+	right  binaryNode // may be nil
 }
 
 func CreateBuilder() Builder {
-	return &builderImpl{createLeafBuilder()}
+	return &builderImpl{}
 }
 
 func (this *builderImpl) Add(value Object) Builder {
@@ -42,49 +36,39 @@ func (this *builderImpl) Size() int {
 }
 
 func (this *builderImpl) Build() List {
-	return createListForBuilder(this.leaves.build())
+	return createListNode(this.leaves.build())
 }
 
-func createLeafBuilder() *leafBuilder {
-	var answer leafBuilder
-	answer.buffer = make([]Object, maxPerBuilderNode)
-	return &answer
-}
-
-func (this *leafBuilder) createLeafNodeFromBuffer(start int, count int) node {
-	contents := make([]Object, count)
-	copy(contents, this.buffer[start:])
-	return createLeafNode(contents)
+func (this *leafBuilder) createLeafFromBuffer() binaryNode {
+	values := make([]Object, this.count)
+	copy(values[0:], this.buffer[0:this.count])
+	return createMultiValueLeafNode(values)
 }
 
 func (this *leafBuilder) addValue(value Object) {
-	this.buffer[this.count] = value
-	this.count += 1
-	if this.count == maxPerBuilderNode {
+	if this.count == binaryArrayNodeMaxValues {
+		leafNode := this.createLeafFromBuffer()
 		if this.parent == nil {
-			this.parent = createBranchBuilder(minBranchBuilderHeight)
+			this.parent = createBranchBuilder(leafNode)
+		} else {
+			this.parent.addNode(leafNode)
 		}
-		this.parent.addNode(this.createLeafNodeFromBuffer(0, maxPerNode))
-		copy(this.buffer[0:], this.buffer[maxPerNode:])
-		this.count = minPerNode
+		this.buffer[0] = value
+		this.count = 1
+	} else {
+		this.buffer[this.count] = value
+		this.count += 1
 	}
 }
 
-func (this *leafBuilder) build() node {
-	if this.count <= maxPerNode {
-		if this.parent == nil {
-			return this.createLeafNodeFromBuffer(0, this.count)
-		} else {
-			return this.parent.build(this.createLeafNodeFromBuffer(0, this.count), nil)
-		}
+func (this *leafBuilder) build() binaryNode {
+	if this.count == 0 {
+		return createEmptyLeafNode()
+	} else if this.parent == nil {
+		return this.createLeafFromBuffer()
+	} else {
+		return this.parent.build(this.createLeafFromBuffer())
 	}
-
-	parent := this.parent
-	if parent == nil {
-		parent = createBranchBuilder(minBranchBuilderHeight)
-	}
-	split := this.count - minPerNode
-	return parent.build(this.createLeafNodeFromBuffer(0, split), this.createLeafNodeFromBuffer(split, minPerNode))
 }
 
 func (this *leafBuilder) computeSize() int {
@@ -95,69 +79,46 @@ func (this *leafBuilder) computeSize() int {
 	return answer
 }
 
-func createBranchBuilder(height int) *branchBuilder {
-	return &branchBuilder{buffer: make([]node, maxPerBuilderNode+1), height: height}
+func createBranchBuilder(left binaryNode) *branchBuilder {
+	return &branchBuilder{left: left}
 }
 
-func (this *branchBuilder) addNode(node node) {
-	this.buffer[this.count] = node
-	this.count += 1
-	if this.count == maxPerBuilderNode {
-		if this.parent == nil {
-			this.parent = createBranchBuilder(this.height + 1)
-		}
-		this.parent.addNode(this.createBranchNodeFromBuffer(0, maxPerNode))
-		copy(this.buffer[0:], this.buffer[maxPerNode:])
-		this.count = minPerNode
-	}
-}
-
-func (this *branchBuilder) build(extra1 node, extra2 node) node {
-	this.buffer[this.count] = extra1
-	count := this.count + 1
-	if extra2 != nil {
-		this.buffer[this.count+1] = extra2
-		count += 1
-	}
-
-	var answer node
-	if count <= maxPerNode {
-		answer = this.createBranchNodeFromBuffer(0, count)
-		if this.parent != nil {
-			answer = this.parent.build(answer, nil)
-		}
+func (this *branchBuilder) addNode(node binaryNode) {
+	if this.right == nil {
+		this.right = node
 	} else {
-		split := count - minPerNode
-		if split > maxPerNode {
-			split = maxPerNode
+		branchNode := createBinaryBranchNode(this.left, this.right)
+		if this.parent == nil {
+			this.parent = createBranchBuilder(branchNode)
+		} else {
+			this.parent.addNode(branchNode)
 		}
-		node1 := this.createBranchNodeFromBuffer(0, split)
-		node2 := this.createBranchNodeFromBuffer(split, count-split)
-		parent := this.parent
-		if parent == nil {
-			parent = createBranchBuilder(this.height + 1)
-		}
-		answer = parent.build(node1, node2)
+		this.left = node
+		this.right = nil
 	}
+}
 
+func (this *branchBuilder) build(extra binaryNode) binaryNode {
+	var answer binaryNode
+	if this.right == nil {
+		answer = this.left
+	} else {
+		answer = createBinaryBranchNode(this.left, this.right)
+	}
+	if this.parent != nil {
+		answer = this.parent.build(answer)
+	}
+	answer = answer.appendNode(extra)
 	return answer
 }
 
 func (this *branchBuilder) computeSize() int {
-	answer := 0
-	for i := 0; i < this.count; i++ {
-		answer += this.buffer[i].size()
+	answer := this.left.size()
+	if this.right != nil {
+		answer += this.right.size()
 	}
 	if this.parent != nil {
 		answer += this.parent.computeSize()
 	}
 	return answer
-}
-
-func (this *branchBuilder) createBranchNodeFromBuffer(startOffset int, count int) node {
-	children := make([]node, count)
-	copy(children, this.buffer[startOffset:])
-	nodeSize := computeBranchNodeSize(children)
-	nodeHeight := this.height
-	return createBranchNode(children, nodeSize, nodeHeight)
 }

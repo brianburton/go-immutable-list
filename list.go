@@ -2,20 +2,10 @@ package immutableList
 
 import "fmt"
 
-const (
-	minPerNode = 8
-	maxPerNode = 2 * minPerNode
-)
-
 type Object interface{}
 
 type Processor func(Object)
 type Visitor func(int, Object)
-type iteratorState struct {
-	next         *iteratorState
-	currentNode  node
-	currentIndex int
-}
 
 type reporter func(message string)
 
@@ -51,73 +41,32 @@ type List interface {
 	Pop() (Object, List)
 }
 
-type node interface {
-	size() int
-	get(index int) Object
-	getFirst() Object
-	getLast() Object
-	append(value Object) (node, node)
-	prepend(value Object) (node, node)
-	appendNode(other node) (node, node)
-	prependNode(other node) (node, node)
-	insert(indexBefore int, value Object) (node, node)
-	delete(index int) node
-	set(index int, value Object) node
-	head(index int) node
-	tail(index int) node
-	pop() (Object, node)
-	height() int
-	forEach(proc Processor)
-	visit(start int, limit int, v Visitor)
-	checkInvariants(r reporter, isRoot bool)
-	isComplete() bool
-	mergeWith(other node) (node, node)
-	next(state *iteratorState) (*iteratorState, Object)
-}
-
 type listImpl struct {
-	root node
+	root binaryNode
 }
 
-type iteratorImpl struct {
-	state *iteratorState
-	value Object
-}
-
-var sharedEmptyListInstance List = &listImpl{sharedEmptyNodeInstance}
+var sharedEmptyListInstance List = &listImpl{sharedEmptyBinaryNode}
 
 func Create() List {
 	return sharedEmptyListInstance
 }
 
-func createListForBuilder(root node) List {
+func createListNode(root binaryNode) List {
 	if root.size() == 0 {
 		return sharedEmptyListInstance
 	} else {
-		return &listImpl{root}
+		return &listImpl{root: root}
 	}
 }
 
 func (this *listImpl) FwdIterate() Iterator {
-	var state *iteratorState
+	var state *binaryIteratorState
 	if this.root.size() == 0 {
 		state = nil
 	} else {
-		state = &iteratorState{currentNode: this.root}
+		state = &binaryIteratorState{currentNode: this.root}
 	}
-	return &iteratorImpl{state: state}
-}
-
-func (this *iteratorImpl) Next() bool {
-	if this.state == nil {
-		return false
-	}
-	this.state, this.value = this.state.currentNode.next(this.state)
-	return true
-}
-
-func (this *iteratorImpl) Get() Object {
-	return this.value
+	return &binaryIteratorImpl{state: state}
 }
 
 func (this *listImpl) Size() int {
@@ -137,40 +86,16 @@ func (this *listImpl) GetLast() Object {
 }
 
 func (this *listImpl) Append(value Object) List {
-	replacement, extra := this.root.append(value)
-	return createListNode(replacement, extra)
+	return createListNode(this.root.append(value))
 }
 
 func (this *listImpl) AppendList(other List) List {
 	otherImpl := other.(*listImpl)
-	thisSize := this.root.size()
-	otherSize := otherImpl.root.size()
-	if thisSize == 0 {
-		return other
-	}
-	if otherSize == 0 {
-		return this
-	}
-
-	var replacement, extra node
-	if thisSize >= otherSize {
-		replacement, extra = this.root.appendNode(otherImpl.root)
-	} else {
-		replacement, extra = otherImpl.root.prependNode(this.root)
-	}
-	return createListNode(replacement, extra)
+	return createListNode(appendBinaryNodes(this.root, otherImpl.root))
 }
 
 func (this *listImpl) Insert(indexBefore int, value Object) List {
-	currentSize := this.root.size()
-	if indexBefore < 0 || indexBefore > currentSize {
-		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", currentSize, indexBefore))
-	}
-	if indexBefore == currentSize {
-		return this.Append(value)
-	}
-	replacement, extra := this.root.insert(indexBefore, value)
-	return createListNode(replacement, extra)
+	return createListNode(this.root.insert(indexBefore, value))
 }
 
 func (this *listImpl) InsertList(indexBefore int, other List) List {
@@ -188,16 +113,7 @@ func (this *listImpl) InsertList(indexBefore int, other List) List {
 }
 
 func (this *listImpl) Delete(index int) List {
-	size := this.Size()
-	if index < 0 || index >= size {
-		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", size, index))
-	}
-	if size == 1 {
-		return sharedEmptyListInstance
-	} else {
-		newRoot := this.root.delete(index)
-		return &listImpl{newRoot}
-	}
+	return createListNode(this.root.delete(index))
 }
 
 func (this *listImpl) DeleteRange(offset int, limit int) List {
@@ -212,47 +128,23 @@ func (this *listImpl) DeleteRange(offset int, limit int) List {
 		return this
 	}
 
-	var root1, root2 node
+	var root binaryNode
 	if offset == 0 {
-		root1 = this.root.tail(limit)
+		root = this.root.tail(limit)
 	} else if limit == size {
-		root1 = this.root.head(offset)
+		root = this.root.head(offset)
 	} else {
-		prefix := this.root.head(offset)
-		suffix := this.root.tail(limit)
-		if prefix.size() >= suffix.size() {
-			root1, root2 = prefix.appendNode(suffix)
-		} else {
-			root1, root2 = suffix.prependNode(prefix)
-		}
+		root = appendBinaryNodes(this.root.head(offset), this.root.tail(limit))
 	}
-	return createListNode(root1, root2)
+	return createListNode(root)
 }
 
 func (this *listImpl) Head(length int) List {
-	size := this.Size()
-	if length < 0 || length > size {
-		panic(fmt.Sprintf("length out of bounds: size=%d length=%d", size, length))
-	}
-	if length == 0 {
-		return sharedEmptyListInstance
-	}
-
-	root := this.root.head(length)
-	return &listImpl{root}
+	return createListNode(this.root.head(length))
 }
 
 func (this *listImpl) Tail(index int) List {
-	size := this.Size()
-	if index < 0 || index > size {
-		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", size, index))
-	}
-	if index == size {
-		return sharedEmptyListInstance
-	}
-
-	root := this.root.tail(index)
-	return &listImpl{root}
+	return createListNode(this.root.tail(index))
 }
 
 func (this *listImpl) SubList(offset int, limit int) List {
@@ -267,7 +159,7 @@ func (this *listImpl) SubList(offset int, limit int) List {
 		return sharedEmptyListInstance
 	}
 
-	var root node
+	var root binaryNode
 	if offset == 0 {
 		root = this.root.head(limit)
 	} else if limit == size {
@@ -275,7 +167,7 @@ func (this *listImpl) SubList(offset int, limit int) List {
 	} else {
 		root = this.root.head(limit).tail(offset)
 	}
-	return &listImpl{root}
+	return createListNode(root)
 }
 
 func (this *listImpl) ForEach(proc Processor) {
@@ -286,7 +178,7 @@ func (this *listImpl) Visit(offset int, limit int, visitor Visitor) {
 	if offset < 0 || limit < offset || limit > this.Size() {
 		panic(fmt.Sprintf("invalid offset or limit: size=%d offset=%d limit=%d", this.Size(), offset, limit))
 	}
-	this.root.visit(offset, limit, visitor)
+	this.root.visit(0, offset, limit, visitor)
 }
 
 func (this *listImpl) Select(predicate func(Object) bool) List {
@@ -307,22 +199,17 @@ func (this *listImpl) Slice(offset, limit int) []Object {
 		return make([]Object, 0)
 	}
 	answer := make([]Object, limit-offset)
-	this.root.visit(offset, limit, func(index int, obj Object) {
+	this.root.visit(0, offset, limit, func(index int, obj Object) {
 		answer[index-offset] = obj
 	})
 	return answer
 }
 
 func (this *listImpl) Set(index int, value Object) List {
-	size := this.Size()
-	if index < 0 || index > size {
-		panic(fmt.Sprintf("index out of bounds: size=%d index=%d", size, index))
-	}
-	if index == size {
-		return this.Append(value)
+	if index == this.root.size() {
+		return createListNode(this.root.append(value))
 	} else {
-		newRoot := this.root.set(index, value)
-		return &listImpl{newRoot}
+		return createListNode(this.root.set(index, value))
 	}
 }
 
@@ -338,8 +225,7 @@ func (this *listImpl) IsEmpty() bool {
 }
 
 func (this *listImpl) Push(value Object) List {
-	newRoot, extra := this.root.prepend(value)
-	return createListNode(newRoot, extra)
+	return createListNode(this.root.prepend(value))
 }
 
 func (this *listImpl) Pop() (Object, List) {
@@ -351,17 +237,6 @@ func (this *listImpl) Pop() (Object, List) {
 		return value, sharedEmptyListInstance
 	default:
 		value, newRoot := this.root.pop()
-		return value, &listImpl{newRoot}
-	}
-}
-
-func createListNode(replacement node, extra node) List {
-	if extra == nil {
-		return &listImpl{root: replacement}
-	} else {
-		children := []node{replacement, extra}
-		nodeSize := replacement.size() + extra.size()
-		nodeHeight := replacement.height() + 1
-		return &listImpl{root: createBranchNode(children, nodeSize, nodeHeight)}
+		return value, createListNode(newRoot)
 	}
 }

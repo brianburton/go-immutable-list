@@ -112,7 +112,7 @@ func TestHead(t *testing.T) {
 		truncated := list.Head(i)
 		validateList(t, truncated, i)
 	}
-	list = createListForTest(1, minPerNode)
+	list = createListForTest(1, binaryArrayNodeMaxValues)
 	for i := list.Size(); i >= 0; i-- {
 		list = list.Head(i)
 		validateList(t, list, i)
@@ -125,10 +125,10 @@ func TestTail(t *testing.T) {
 		truncated := list.Tail(i)
 		validateList2(t, truncated, i+1, list.Size())
 	}
-	list = createListForTest(1, minPerNode)
-	for i := 1; i <= minPerNode; i++ {
+	list = createListForTest(1, binaryArrayNodeMaxValues)
+	for i := 1; i <= binaryArrayNodeMaxValues; i++ {
 		list = list.Tail(1)
-		validateList2(t, list, i+1, minPerNode)
+		validateList2(t, list, i+1, binaryArrayNodeMaxValues)
 	}
 }
 
@@ -188,12 +188,12 @@ func TestDeleteRange(t *testing.T) {
 func TestBuilder(t *testing.T) {
 	builder := CreateBuilder()
 	validateList(t, builder.Build(), 0)
-	for i := 1; i <= maxPerNode; i++ {
+	for i := 1; i <= binaryArrayNodeMaxValues; i++ {
 		builder.Add(val(i))
 		validateSize(t, builder.Size(), i)
 		validateList(t, builder.Build(), i)
 	}
-	for i := maxPerNode + 1; i <= 200; i++ {
+	for i := binaryArrayNodeMaxValues + 1; i <= 200; i++ {
 		builder.Add(val(i))
 		validateSize(t, builder.Size(), i)
 		validateList(t, builder.Build(), i)
@@ -311,7 +311,7 @@ func TestFirstLast(t *testing.T) {
 }
 
 func TestDeleteAll(t *testing.T) {
-	for length := 16; length <= 512; length += maxPerNode {
+	for length := 16; length <= 512; length += binaryArrayNodeMaxValues {
 		increment := length / 11
 		for index := 0; index < length; index += increment {
 			if index < length {
@@ -346,7 +346,7 @@ func TestPopAll(t *testing.T) {
 	length := 1
 	for length <= 4096 {
 		popAllImpl(t, length)
-		length = length * maxPerNode
+		length = length * binaryArrayNodeMaxValues
 	}
 }
 
@@ -406,77 +406,16 @@ func TestInsertList(t *testing.T) {
 	validateInsertList(t, inserted, 300, 500, 0)
 
 	prefix = createListForTestInsertList(val(1), 3)
-	suffix := createListForTestInsertList(val(3), minPerNode-1)
-	middle = createListForTestInsertList(val(2), minPerNode-1)
+	suffix := createListForTestInsertList(val(3), binaryArrayNodeMaxValues-1)
+	middle = createListForTestInsertList(val(2), binaryArrayNodeMaxValues-1)
 	inserted = prefix.AppendList(suffix).InsertList(3, middle)
-	validateInsertList(t, inserted, 3, minPerNode-1, minPerNode-1)
+	validateInsertList(t, inserted, 3, binaryArrayNodeMaxValues-1, binaryArrayNodeMaxValues-1)
 
 	prefix = createListForTestInsertList(val(1), 300)
 	suffix = createListForTestInsertList(val(3), 300)
 	middle = createListForTestInsertList(val(2), 500)
 	inserted = prefix.AppendList(suffix).InsertList(300, middle)
 	validateInsertList(t, inserted, 300, 500, 300)
-}
-
-func BenchmarkBtreeGet1000(b *testing.B) {
-	benchmarkBtreeGet(1000, b)
-}
-
-func BenchmarkBtreeGet10000(b *testing.B) {
-	benchmarkBtreeGet(10000, b)
-}
-
-func BenchmarkBtreeGet100000(b *testing.B) {
-	benchmarkBtreeGet(100000, b)
-}
-
-func BenchmarkBtreeDelete1000(b *testing.B) {
-	benchmarkBtreeDelete(1000, b)
-}
-
-func BenchmarkBtreeDelete10000(b *testing.B) {
-	benchmarkBtreeDelete(10000, b)
-}
-
-func BenchmarkBtreeDelete100000(b *testing.B) {
-	benchmarkBtreeDelete(100000, b)
-}
-
-func benchmarkBtreeGet(size int, b *testing.B) {
-	list := createBtreeListForBenchmark(size)
-	for i := 1; i <= b.N; i++ {
-		list.get(i % size)
-	}
-}
-
-func benchmarkBtreeDelete(size int, b *testing.B) {
-	orig := createBtreeListForBenchmark(size)
-	list := orig
-	for i := 1; i <= b.N; i++ {
-		list = list.delete(i % list.size())
-		if list.size() == 0 {
-			list = orig
-		}
-	}
-}
-func createBtreeListForBenchmark(size int) node {
-	var list node = sharedEmptyNodeInstance
-	for i := 1; i <= size; i++ {
-		replacement, extra := list.append(val(i))
-		list = createBtreeNodeForBenchmark(replacement, extra)
-	}
-	return list
-}
-
-func createBtreeNodeForBenchmark(replacement node, extra node) node {
-	if extra == nil {
-		return replacement
-	} else {
-		children := []node{replacement, extra}
-		nodeSize := replacement.size() + extra.size()
-		nodeHeight := replacement.height() + 1
-		return createBranchNode(children, nodeSize, nodeHeight)
-	}
 }
 
 func createListForTest(firstValue int, lastValue int) List {
