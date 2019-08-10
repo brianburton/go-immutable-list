@@ -23,262 +23,212 @@ type binaryNode interface {
 	rotateRight(parentRight binaryNode) binaryNode
 }
 
-type binaryLeafNode struct {
-	leftValue  Object
-	rightValue Object
+const (
+	binaryArrayNodeMaxValues = 32
+)
+
+type arrayLeafNode struct {
+	values []Object
 }
 
-func createBinaryLeafNode(leftValue Object, rightValue Object) binaryNode {
-	return &binaryLeafNode{
-		leftValue:  leftValue,
-		rightValue: rightValue,
+func createSingleValueLeafNode(value Object) binaryNode {
+	values := make([]Object, 1)
+	values[0] = value
+	return createMultiValueLeafNode(values)
+}
+
+func createMultiValueLeafNode(values []Object) binaryNode {
+	return &arrayLeafNode{values: values}
+}
+
+func (a *arrayLeafNode) get(index int) Object {
+	return a.values[index]
+}
+
+func (a *arrayLeafNode) getFirst() Object {
+	return a.values[0]
+}
+
+func (a *arrayLeafNode) getLast() Object {
+	return a.values[len(a.values)-1]
+}
+
+func (a *arrayLeafNode) pop() (Object, binaryNode) {
+	return a.values[0], a.delete(0)
+}
+
+func (a *arrayLeafNode) set(index int, value Object) binaryNode {
+	currentSize := len(a.values)
+	if index < 0 || index >= currentSize {
+		panic(fmt.Sprintf("invalid index for arrayLeafNode: %d", index))
+	}
+	newValues := make([]Object, currentSize)
+	copy(newValues, a.values)
+	newValues[index] = value
+	return createMultiValueLeafNode(newValues)
+}
+
+func (a *arrayLeafNode) insert(index int, value Object) binaryNode {
+	currentSize := len(a.values)
+	if index < 0 || index > currentSize {
+		panic(fmt.Sprintf("invalid index for arrayLeafNode: %d", index))
+	}
+
+	if index == 0 {
+		if currentSize < binaryArrayNodeMaxValues {
+			values := make([]Object, currentSize+1)
+			values[0] = value
+			copy(values[1:], a.values[0:])
+			return createMultiValueLeafNode(values)
+		} else {
+			values := make([]Object, 1)
+			values[0] = value
+			return createBinaryBranchNode(createMultiValueLeafNode(values), a)
+		}
+	} else if index == currentSize {
+		if currentSize < binaryArrayNodeMaxValues {
+			values := make([]Object, currentSize+1)
+			copy(values[0:], a.values[0:])
+			values[currentSize] = value
+			return createMultiValueLeafNode(values)
+		} else {
+			values := make([]Object, 1)
+			values[0] = value
+			return createBinaryBranchNode(a, createMultiValueLeafNode(values))
+		}
+	} else {
+		if currentSize < binaryArrayNodeMaxValues {
+			values := make([]Object, currentSize+1)
+			copy(values[0:], a.values[0:index])
+			values[index] = value
+			copy(values[(index+1):], a.values[index:])
+			return createMultiValueLeafNode(values)
+		} else {
+			left := make([]Object, index)
+			copy(left[0:], a.values[0:index])
+
+			right := make([]Object, currentSize+1-index)
+			right[0] = value
+			copy(right[1:], a.values[index:])
+			return createBinaryBranchNode(createMultiValueLeafNode(left), createMultiValueLeafNode(right))
+		}
 	}
 }
 
-func (b *binaryLeafNode) get(index int) Object {
-	switch index {
-	case 0:
-		return b.leftValue
-	case 1:
-		return b.rightValue
-	default:
-		panic(fmt.Sprintf("invalid index for binaryLeafNode: %d", index))
+func (a *arrayLeafNode) delete(index int) binaryNode {
+	currentSize := len(a.values)
+	if index < 0 || index >= currentSize {
+		panic(fmt.Sprintf("invalid index for arrayLeafNode: %d", index))
+	}
+	if len(a.values) == 1 {
+		return createEmptyLeafNode()
+	}
+	values := make([]Object, currentSize-1)
+	if index == 0 {
+		copy(values[0:], a.values[1:])
+	} else if index == currentSize-1 {
+		copy(values[0:], a.values[0:(currentSize-1)])
+	} else {
+		copy(values[0:], a.values[0:index])
+		copy(values[index:], a.values[(index+1):])
+	}
+	return createMultiValueLeafNode(values)
+}
+
+func (a *arrayLeafNode) head(index int) binaryNode {
+	currentSize := len(a.values)
+	if index < 0 || index > currentSize {
+		panic(fmt.Sprintf("invalid index for arrayLeafNode: %d", index))
+	}
+	if index == 0 {
+		return createEmptyLeafNode()
+	} else if index == currentSize {
+		return a
+	} else {
+		values := make([]Object, index)
+		copy(values[0:], a.values[0:index])
+		return createMultiValueLeafNode(values)
 	}
 }
 
-func (b *binaryLeafNode) getFirst() Object {
-	return b.leftValue
-}
-
-func (b *binaryLeafNode) getLast() Object {
-	return b.rightValue
-}
-
-func (b *binaryLeafNode) pop() (Object, binaryNode) {
-	return b.leftValue, createSingleLeafNode(b.rightValue)
-}
-
-func (b *binaryLeafNode) set(index int, value Object) binaryNode {
-	switch index {
-	case 0:
-		return createBinaryLeafNode(value, b.rightValue)
-	case 1:
-		return createBinaryLeafNode(b.leftValue, value)
-	default:
-		panic(fmt.Sprintf("invalid index for binaryLeftNode: %d", index))
+func (a *arrayLeafNode) tail(index int) binaryNode {
+	currentSize := len(a.values)
+	if index < 0 || index > currentSize {
+		panic(fmt.Sprintf("invalid index for arrayLeafNode: %d", index))
+	}
+	if index == 0 {
+		return a
+	} else if index == currentSize {
+		return createEmptyLeafNode()
+	} else {
+		values := make([]Object, currentSize-index)
+		copy(values[0:], a.values[index:])
+		return createMultiValueLeafNode(values)
 	}
 }
 
-func (b *binaryLeafNode) insert(index int, value Object) binaryNode {
-	switch index {
-	case 0:
-		return createBinaryBranchNode(createSingleLeafNode(value), b)
-	case 1:
-		return createBinaryBranchNode(createSingleLeafNode(b.leftValue), createBinaryLeafNode(value, b.rightValue))
-	case 2:
-		return createBinaryBranchNode(b, createSingleLeafNode(value))
-	default:
-		panic(fmt.Sprintf("invalid index for binaryLeftNode: %d", index))
-	}
+func (a *arrayLeafNode) left() binaryNode {
+	panic("not implemented for leaf node")
 }
 
-func (b *binaryLeafNode) delete(index int) binaryNode {
-	switch index {
-	case 0:
-		return createSingleLeafNode(b.rightValue)
-	case 1:
-		return createSingleLeafNode(b.leftValue)
-	case 2:
-		return createEmptyBinaryNode()
-	default:
-		panic(fmt.Sprintf("invalid index for binaryLeftNode: %d", index))
-	}
+func (a *arrayLeafNode) right() binaryNode {
+	panic("not implemented for leaf node")
 }
 
-func (b *binaryLeafNode) head(index int) binaryNode {
-	switch index {
-	case 0:
-		return createEmptyBinaryNode()
-	case 1:
-		return createSingleLeafNode(b.leftValue)
-	case 2:
-		return b
-	default:
-		panic(fmt.Sprintf("invalid index for binaryLeftNode: %d", index))
-	}
-}
-
-func (b *binaryLeafNode) tail(index int) binaryNode {
-	switch index {
-	case 0:
-		return b
-	case 1:
-		return createSingleLeafNode(b.rightValue)
-	case 2:
-		return createEmptyBinaryNode()
-	default:
-		panic(fmt.Sprintf("invalid index for binaryLeftNode: %d", index))
-	}
-}
-
-func (b *binaryLeafNode) left() binaryNode {
-	panic("not implemented for leaf nodes")
-}
-
-func (b *binaryLeafNode) right() binaryNode {
-	panic("not implemented for leaf nodes")
-}
-
-func (b *binaryLeafNode) depth() int {
+func (a *arrayLeafNode) depth() int {
 	return 0
 }
 
-func (b *binaryLeafNode) size() int {
-	return 2
+func (a *arrayLeafNode) size() int {
+	return len(a.values)
 }
 
-func (b *binaryLeafNode) checkInvariants(report reporter, isRoot bool) {
-}
-
-func (b *binaryLeafNode) rotateLeft(parentLeft binaryNode) binaryNode {
-	panic("not implemented for leaf nodes")
-}
-
-func (b *binaryLeafNode) rotateRight(parentRight binaryNode) binaryNode {
-	panic("not implemented for leaf nodes")
-}
-
-func (b *binaryLeafNode) appendNode(n binaryNode) binaryNode {
-	if n.depth() != 0 {
-		panic("appending branch to leaf")
+func (a *arrayLeafNode) appendNode(n binaryNode) binaryNode {
+	if n.size() == 0 {
+		return a
 	}
-	return createBinaryBranchNode(b, n)
-}
-
-func (b *binaryLeafNode) prependNode(n binaryNode) binaryNode {
-	if n.depth() != 0 {
-		panic("appending branch to leaf")
+	if o, matches := n.(*arrayLeafNode); matches {
+		combinedSize := a.size() + o.size()
+		if combinedSize <= binaryArrayNodeMaxValues {
+			return appendLeafNodeValues(combinedSize, a, o)
+		}
 	}
-	return createBinaryBranchNode(n, b)
+	return createBinaryBranchNode(a, n)
 }
 
-type singleLeafNode struct {
-	value Object
-}
-
-func createSingleLeafNode(value Object) binaryNode {
-	return &singleLeafNode{value: value}
-}
-
-func (s *singleLeafNode) get(index int) Object {
-	if index == 0 {
-		return s.value
-	} else {
-		panic(fmt.Sprintf("invalid index for singleLeafNode: %d", index))
+func (a *arrayLeafNode) prependNode(n binaryNode) binaryNode {
+	if n.size() == 0 {
+		return a
 	}
+	if o, matches := n.(*arrayLeafNode); matches {
+		combinedSize := o.size() + a.size()
+		if combinedSize <= binaryArrayNodeMaxValues {
+			return appendLeafNodeValues(combinedSize, o, a)
+		}
+	}
+	return createBinaryBranchNode(n, a)
 }
 
-func (b *singleLeafNode) getFirst() Object {
-	return b.value
+func appendLeafNodeValues(combinedSize int, a *arrayLeafNode, b *arrayLeafNode) binaryNode {
+	values := make([]Object, combinedSize)
+	copy(values[0:], a.values)
+	copy(values[a.size():], b.values)
+	return createMultiValueLeafNode(values)
 }
 
-func (b *singleLeafNode) getLast() Object {
-	return b.value
-}
-
-func (b *singleLeafNode) pop() (Object, binaryNode) {
-	return b.value, createEmptyBinaryNode()
-}
-
-func (b *singleLeafNode) set(index int, value Object) binaryNode {
-	switch index {
-	case 0:
-		return createSingleLeafNode(value)
-	default:
-		panic(fmt.Sprintf("invalid index for binaryLeftNode: %d", index))
+func (a *arrayLeafNode) checkInvariants(report reporter, isRoot bool) {
+	currentSize := len(a.values)
+	if currentSize < 1 || currentSize > binaryArrayNodeMaxValues {
+		report(fmt.Sprintf("incorrect size: currentSize=%d", currentSize))
 	}
 }
 
-func (s *singleLeafNode) insert(index int, value Object) binaryNode {
-	switch index {
-	case 0:
-		return createBinaryLeafNode(value, s.value)
-	case 1:
-		return createBinaryLeafNode(s.value, value)
-	default:
-		panic(fmt.Sprintf("invalid index for singleLeafNode: %d", index))
-	}
+func (a *arrayLeafNode) rotateLeft(parentLeft binaryNode) binaryNode {
+	panic("not implemented for leaf node")
 }
 
-func (b *singleLeafNode) delete(index int) binaryNode {
-	if index == 0 {
-		return createEmptyBinaryNode()
-	} else {
-		panic(fmt.Sprintf("invalid index for binaryLeftNode: %d", index))
-	}
-}
-
-func (b *singleLeafNode) head(index int) binaryNode {
-	switch index {
-	case 0:
-		return createEmptyBinaryNode()
-	case 1:
-		return b
-	default:
-		panic(fmt.Sprintf("invalid index for binaryLeftNode: %d", index))
-	}
-}
-
-func (b *singleLeafNode) tail(index int) binaryNode {
-	switch index {
-	case 0:
-		return b
-	case 1:
-		return createEmptyBinaryNode()
-	default:
-		panic(fmt.Sprintf("invalid index for binaryLeftNode: %d", index))
-	}
-}
-
-func (s *singleLeafNode) left() binaryNode {
-	panic("not implemented for leaf nodes")
-}
-
-func (s *singleLeafNode) right() binaryNode {
-	panic("not implemented for leaf nodes")
-}
-
-func (s *singleLeafNode) depth() int {
-	return 0
-}
-
-func (s *singleLeafNode) size() int {
-	return 1
-}
-
-func (s *singleLeafNode) checkInvariants(report reporter, isRoot bool) {
-}
-
-func (s *singleLeafNode) rotateLeft(parentLeft binaryNode) binaryNode {
-	panic("not implemented for leaf nodes")
-}
-
-func (s *singleLeafNode) rotateRight(parentRight binaryNode) binaryNode {
-	panic("not implemented for leaf nodes")
-}
-
-func (b *singleLeafNode) appendNode(n binaryNode) binaryNode {
-	if n.depth() != 0 {
-		panic("appending branch to leaf")
-	}
-	return createBinaryBranchNode(b, n)
-}
-
-func (b *singleLeafNode) prependNode(n binaryNode) binaryNode {
-	if n.depth() != 0 {
-		panic("appending branch to leaf")
-	}
-	return createBinaryBranchNode(n, b)
+func (a *arrayLeafNode) rotateRight(parentRight binaryNode) binaryNode {
+	panic("not implemented for leaf node")
 }
 
 type emptyLeafNode struct {
@@ -286,7 +236,7 @@ type emptyLeafNode struct {
 
 var sharedEmptyBinaryNode binaryNode = &emptyLeafNode{}
 
-func createEmptyBinaryNode() binaryNode {
+func createEmptyLeafNode() binaryNode {
 	return sharedEmptyBinaryNode
 }
 
@@ -312,7 +262,7 @@ func (b *emptyLeafNode) set(index int, value Object) binaryNode {
 
 func (e *emptyLeafNode) insert(index int, value Object) binaryNode {
 	if index == 0 {
-		return createSingleLeafNode(value)
+		return createSingleValueLeafNode(value)
 	} else {
 		panic(fmt.Sprintf("invalid index for emptyLeafNode: %d", index))
 	}

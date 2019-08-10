@@ -418,6 +418,32 @@ func TestInsertList(t *testing.T) {
 	validateInsertList(t, inserted, 300, 500, 300)
 }
 
+func benchmarkBtreeGet(size int, b *testing.B) {
+	var list node = sharedEmptyNodeInstance
+	for i := 1; i <= size; i++ {
+		replacement, extra := list.append(val(i))
+		list = createBtreeNodeForBenchmark(replacement, extra)
+	}
+	for i := 1; i <= b.N; i++ {
+		list.get(i % size)
+	}
+}
+
+func BenchmarkBtreeGet100000(b *testing.B) {
+	benchmarkBtreeGet(100000, b)
+}
+
+func createBtreeNodeForBenchmark(replacement node, extra node) node {
+	if extra == nil {
+		return replacement
+	} else {
+		children := []node{replacement, extra}
+		nodeSize := replacement.size() + extra.size()
+		nodeHeight := replacement.height() + 1
+		return createBranchNode(children, nodeSize, nodeHeight)
+	}
+}
+
 func createListForTest(firstValue int, lastValue int) List {
 	builder := CreateBuilder()
 	for i := firstValue; i <= lastValue; i++ {

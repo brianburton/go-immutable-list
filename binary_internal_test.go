@@ -129,6 +129,20 @@ func TestBinaryTail(t *testing.T) {
 	}
 }
 
+func benchmarkBinaryGet(size int, b *testing.B) {
+	list := createEmptyLeafNode()
+	for i := 1; i <= size; i++ {
+		list = list.insert(list.size(), val(i))
+	}
+	for i := 1; i <= b.N; i++ {
+		list.get(i % size)
+	}
+}
+
+func BenchmarkBinaryGet100000(b *testing.B) {
+	benchmarkBinaryGet(100000, b)
+}
+
 func validateBinaryNode(t *testing.T, b binaryNode, e []Object) {
 	if b.size() != len(e) {
 		t.Error(fmt.Sprintf("incorrect size: b=%d e=%d", b.size(), len(e)))
