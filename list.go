@@ -56,23 +56,23 @@ type node interface {
 	get(index int) Object
 	getFirst() Object
 	getLast() Object
-	prepend(value Object) (node, node)
 	append(value Object) (node, node)
+	prepend(value Object) (node, node)
 	appendNode(other node) (node, node)
 	prependNode(other node) (node, node)
 	insert(indexBefore int, value Object) (node, node)
-	head(index int) node
-	tail(index int) node
-	forEach(proc Processor)
-	visit(start int, limit int, v Visitor)
-	height() int
-	isComplete() bool
-	mergeWith(other node) (node, node)
 	delete(index int) node
 	set(index int, value Object) node
-	next(state *iteratorState) (*iteratorState, Object)
-	checkInvariants(r reporter, isRoot bool)
+	head(index int) node
+	tail(index int) node
 	pop() (Object, node)
+	height() int
+	forEach(proc Processor)
+	visit(start int, limit int, v Visitor)
+	checkInvariants(r reporter, isRoot bool)
+	isComplete() bool
+	mergeWith(other node) (node, node)
+	next(state *iteratorState) (*iteratorState, Object)
 }
 
 type listImpl struct {

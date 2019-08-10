@@ -3,25 +3,29 @@ package immutableList
 import "fmt"
 
 type binaryNode interface {
+	size() int
 	get(index int) Object
 	getFirst() Object
 	getLast() Object
-	pop() (Object, binaryNode)
-	set(index int, value Object) binaryNode
-	insert(index int, value Object) binaryNode
-	delete(index int) binaryNode
-	head(index int) binaryNode
-	tail(index int) binaryNode
-	left() binaryNode
-	right() binaryNode
-	depth() int
-	size() int
+	append(value Object) binaryNode
+	prepend(value Object) binaryNode
 	appendNode(n binaryNode) binaryNode
 	prependNode(n binaryNode) binaryNode
+	insert(index int, value Object) binaryNode
+	delete(index int) binaryNode
+	set(index int, value Object) binaryNode
+	head(index int) binaryNode
+	tail(index int) binaryNode
+	pop() (Object, binaryNode)
+	depth() int
+	forEach(proc Processor)
+	visit(start int, limit int, v Visitor)
 	checkInvariants(report reporter, isRoot bool)
 	rotateLeft(parentLeft binaryNode) binaryNode
 	rotateRight(parentRight binaryNode) binaryNode
 	next(state *binaryIteratorState) (*binaryIteratorState, Object)
+	left() binaryNode
+	right() binaryNode
 }
 
 type binaryIteratorState struct {
@@ -109,43 +113,23 @@ func (a *arrayLeafNode) insert(index int, value Object) binaryNode {
 	}
 
 	if index == 0 {
-		if currentSize < binaryArrayNodeMaxValues {
-			values := make([]Object, currentSize+1)
-			values[0] = value
-			copy(values[1:], a.values[0:])
-			return createMultiValueLeafNode(values)
-		} else {
-			values := make([]Object, 1)
-			values[0] = value
-			return createBinaryBranchNode(createMultiValueLeafNode(values), a)
-		}
+		return a.prepend(value)
 	} else if index == currentSize {
-		if currentSize < binaryArrayNodeMaxValues {
-			values := make([]Object, currentSize+1)
-			copy(values[0:], a.values[0:])
-			values[currentSize] = value
-			return createMultiValueLeafNode(values)
-		} else {
-			values := make([]Object, 1)
-			values[0] = value
-			return createBinaryBranchNode(a, createMultiValueLeafNode(values))
-		}
+		return a.append(value)
+	} else if currentSize < binaryArrayNodeMaxValues {
+		values := make([]Object, currentSize+1)
+		copy(values[0:], a.values[0:index])
+		values[index] = value
+		copy(values[(index+1):], a.values[index:])
+		return createMultiValueLeafNode(values)
 	} else {
-		if currentSize < binaryArrayNodeMaxValues {
-			values := make([]Object, currentSize+1)
-			copy(values[0:], a.values[0:index])
-			values[index] = value
-			copy(values[(index+1):], a.values[index:])
-			return createMultiValueLeafNode(values)
-		} else {
-			left := make([]Object, index)
-			copy(left[0:], a.values[0:index])
+		left := make([]Object, index)
+		copy(left[0:], a.values[0:index])
 
-			right := make([]Object, currentSize+1-index)
-			right[0] = value
-			copy(right[1:], a.values[index:])
-			return createBinaryBranchNode(createMultiValueLeafNode(left), createMultiValueLeafNode(right))
-		}
+		right := make([]Object, currentSize+1-index)
+		right[0] = value
+		copy(right[1:], a.values[index:])
+		return createBinaryBranchNode(createMultiValueLeafNode(left), createMultiValueLeafNode(right))
 	}
 }
 
@@ -167,6 +151,50 @@ func (a *arrayLeafNode) delete(index int) binaryNode {
 		copy(values[index:], a.values[(index+1):])
 	}
 	return createMultiValueLeafNode(values)
+}
+
+func (a *arrayLeafNode) append(value Object) binaryNode {
+	currentSize := len(a.values)
+	if currentSize < binaryArrayNodeMaxValues {
+		values := make([]Object, currentSize+1)
+		copy(values[0:], a.values[0:])
+		values[currentSize] = value
+		return createMultiValueLeafNode(values)
+	} else {
+		values := make([]Object, 1)
+		values[0] = value
+		return createBinaryBranchNode(a, createMultiValueLeafNode(values))
+	}
+}
+
+func (a *arrayLeafNode) prepend(value Object) binaryNode {
+	currentSize := len(a.values)
+	if currentSize < binaryArrayNodeMaxValues {
+		values := make([]Object, currentSize+1)
+		values[0] = value
+		copy(values[1:], a.values[0:])
+		return createMultiValueLeafNode(values)
+	} else {
+		values := make([]Object, 1)
+		values[0] = value
+		return createBinaryBranchNode(createMultiValueLeafNode(values), a)
+	}
+}
+
+func (a *arrayLeafNode) forEach(proc Processor) {
+	for _, value := range a.values {
+		proc(value)
+	}
+}
+
+func (a *arrayLeafNode) visit(start int, limit int, v Visitor) {
+	currentSize := len(a.values)
+	if start < 0 || start > currentSize {
+		panic(fmt.Sprintf("invalid index for arrayLeafNode: %d", start))
+	}
+	for i := start; i < limit; i++ {
+		v(i, a.values[i])
+	}
 }
 
 func (a *arrayLeafNode) head(index int) binaryNode {
@@ -335,6 +363,23 @@ func (b *emptyLeafNode) tail(index int) binaryNode {
 	}
 }
 
+func (e *emptyLeafNode) append(value Object) binaryNode {
+	return createSingleValueLeafNode(value)
+}
+
+func (e *emptyLeafNode) prepend(value Object) binaryNode {
+	return createSingleValueLeafNode(value)
+}
+
+func (e *emptyLeafNode) forEach(proc Processor) {
+}
+
+func (e *emptyLeafNode) visit(start int, limit int, v Visitor) {
+	if start != 0 || limit != 0 {
+		panic(fmt.Sprintf("invalid index for emptyLeafNode: start=%d limit=%d", start, limit))
+	}
+}
+
 func (e *emptyLeafNode) left() binaryNode {
 	panic("not implemented for emptyLeafNodes")
 }
@@ -388,6 +433,29 @@ type binaryBranchNode struct {
 	rightChild binaryNode
 	mySize     int
 	myDepth    int
+}
+
+func (b *binaryBranchNode) append(value Object) binaryNode {
+	return createBalancedBinaryBranchNode(b.leftChild, b.rightChild.append(value))
+}
+
+func (b *binaryBranchNode) prepend(value Object) binaryNode {
+	return createBalancedBinaryBranchNode(b.leftChild.prepend(value), b.rightChild)
+}
+
+func (b *binaryBranchNode) forEach(proc Processor) {
+	b.leftChild.forEach(proc)
+	b.rightChild.forEach(proc)
+}
+
+func (b *binaryBranchNode) visit(start int, limit int, v Visitor) {
+	leftSize := b.leftChild.size()
+	if start < leftSize {
+		b.leftChild.visit(start, limit, v)
+	}
+	if limit > leftSize {
+		b.rightChild.visit(start-leftSize, limit-leftSize, v)
+	}
 }
 
 func maxDepth(leftChild binaryNode, rightChild binaryNode) int {

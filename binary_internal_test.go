@@ -135,7 +135,7 @@ func TestBinaryIterator(t *testing.T) {
 		var binary binaryNode = &emptyLeafNode{}
 		for i := 0; i <= length; i += 1 {
 			expected = insertToSlice(expected, i, val(i))
-			binary = binary.insert(i, val(i))
+			binary = binary.append(val(i))
 		}
 		actual := createEmptyLeafNode()
 		for i := createBinaryIterator(binary); i.Next(); {
@@ -190,7 +190,7 @@ func benchmarkBinaryDelete(size int, b *testing.B) {
 func createBinaryListForBenchmark(size int) binaryNode {
 	list := createEmptyLeafNode()
 	for i := 1; i <= size; i++ {
-		list = list.insert(list.size(), val(i))
+		list = list.append(val(i))
 	}
 	return list
 }
