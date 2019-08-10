@@ -129,18 +129,54 @@ func TestBinaryTail(t *testing.T) {
 	}
 }
 
+func BenchmarkBinaryGet1000(b *testing.B) {
+	benchmarkBinaryGet(1000, b)
+}
+
+func BenchmarkBinaryGet10000(b *testing.B) {
+	benchmarkBinaryGet(10000, b)
+}
+
+func BenchmarkBinaryGet100000(b *testing.B) {
+	benchmarkBinaryGet(100000, b)
+}
+
+func BenchmarkBinaryDelete1000(b *testing.B) {
+	benchmarkBinaryDelete(1000, b)
+}
+
+func BenchmarkBinaryDelete10000(b *testing.B) {
+	benchmarkBinaryDelete(10000, b)
+}
+
+func BenchmarkBinaryDelete100000(b *testing.B) {
+	benchmarkBinaryDelete(100000, b)
+}
+
 func benchmarkBinaryGet(size int, b *testing.B) {
-	list := createEmptyLeafNode()
-	for i := 1; i <= size; i++ {
-		list = list.insert(list.size(), val(i))
-	}
+	list := createBinaryListForBenchmark(size)
 	for i := 1; i <= b.N; i++ {
 		list.get(i % size)
 	}
 }
 
-func BenchmarkBinaryGet100000(b *testing.B) {
-	benchmarkBinaryGet(100000, b)
+func benchmarkBinaryDelete(size int, b *testing.B) {
+	orig := createBinaryListForBenchmark(size)
+	list := orig
+	for i := 1; i <= b.N; i++ {
+		list = list.delete(i % list.size())
+		if list.size() == 0 {
+			list = orig
+		}
+	}
+}
+
+func createBinaryListForBenchmark(size int) binaryNode {
+	list := createEmptyLeafNode()
+	for i := 1; i <= size; i++ {
+		list = list.insert(list.size(), val(i))
+	}
+	return list
 }
 
 func validateBinaryNode(t *testing.T, b binaryNode, e []Object) {

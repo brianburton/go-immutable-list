@@ -418,19 +418,54 @@ func TestInsertList(t *testing.T) {
 	validateInsertList(t, inserted, 300, 500, 300)
 }
 
+func BenchmarkBtreeGet1000(b *testing.B) {
+	benchmarkBtreeGet(1000, b)
+}
+
+func BenchmarkBtreeGet10000(b *testing.B) {
+	benchmarkBtreeGet(10000, b)
+}
+
+func BenchmarkBtreeGet100000(b *testing.B) {
+	benchmarkBtreeGet(100000, b)
+}
+
+func BenchmarkBtreeDelete1000(b *testing.B) {
+	benchmarkBtreeDelete(1000, b)
+}
+
+func BenchmarkBtreeDelete10000(b *testing.B) {
+	benchmarkBtreeDelete(10000, b)
+}
+
+func BenchmarkBtreeDelete100000(b *testing.B) {
+	benchmarkBtreeDelete(100000, b)
+}
+
 func benchmarkBtreeGet(size int, b *testing.B) {
-	var list node = sharedEmptyNodeInstance
-	for i := 1; i <= size; i++ {
-		replacement, extra := list.append(val(i))
-		list = createBtreeNodeForBenchmark(replacement, extra)
-	}
+	list := createBtreeListForBenchmark(size)
 	for i := 1; i <= b.N; i++ {
 		list.get(i % size)
 	}
 }
 
-func BenchmarkBtreeGet100000(b *testing.B) {
-	benchmarkBtreeGet(100000, b)
+func benchmarkBtreeDelete(size int, b *testing.B) {
+	orig := createBtreeListForBenchmark(size)
+	list := orig
+	for i := 1; i <= b.N; i++ {
+		list = list.delete(i % list.size())
+		if list.size() == 0 {
+			list = orig
+		}
+	}
+}
+func createBtreeListForBenchmark(size int) node {
+	var list node = sharedEmptyNodeInstance
+	for i := 1; i <= size; i++ {
+		replacement, extra := list.append(val(i))
+		list = createBtreeNodeForBenchmark(replacement, extra)
+	}
+	return list
 }
 
 func createBtreeNodeForBenchmark(replacement node, extra node) node {
