@@ -6,13 +6,9 @@ type Builder interface {
 	Build() List
 }
 
-type builderImpl struct {
-	leaves leafBuilder
-}
-
 type leafBuilder struct {
 	parent *branchBuilder
-	count  int // only zero if addValue() has never been called
+	count  int // only zero if Add() has never been called
 	buffer [binaryArrayNodeMaxValues]Object
 }
 
@@ -23,20 +19,44 @@ type branchBuilder struct {
 }
 
 func CreateBuilder() Builder {
-	return &builderImpl{}
+	return &leafBuilder{}
 }
 
-func (this *builderImpl) Add(value Object) Builder {
-	this.leaves.addValue(value)
+func (this *leafBuilder) Add(value Object) Builder {
+	if this.count == binaryArrayNodeMaxValues {
+		leafNode := this.createLeafFromBuffer()
+		if this.parent == nil {
+			this.parent = createBranchBuilder(leafNode)
+		} else {
+			this.parent.addChild(leafNode)
+		}
+		this.buffer[0] = value
+		this.count = 1
+	} else {
+		this.buffer[this.count] = value
+		this.count += 1
+	}
 	return this
 }
 
-func (this *builderImpl) Size() int {
-	return this.leaves.computeSize()
+func (this *leafBuilder) Size() int {
+	answer := this.count
+	if this.parent != nil {
+		answer += this.parent.computeSize()
+	}
+	return answer
 }
 
-func (this *builderImpl) Build() List {
-	return createListNode(this.leaves.build())
+func (this *leafBuilder) Build() List {
+	var root binaryNode
+	if this.count == 0 {
+		root = createEmptyLeafNode()
+	} else if this.parent == nil {
+		root = this.createLeafFromBuffer()
+	} else {
+		root = this.parent.build(this.createLeafFromBuffer())
+	}
+	return createListNode(root)
 }
 
 func (this *leafBuilder) createLeafFromBuffer() binaryNode {
@@ -45,45 +65,11 @@ func (this *leafBuilder) createLeafFromBuffer() binaryNode {
 	return createMultiValueLeafNode(values)
 }
 
-func (this *leafBuilder) addValue(value Object) {
-	if this.count == binaryArrayNodeMaxValues {
-		leafNode := this.createLeafFromBuffer()
-		if this.parent == nil {
-			this.parent = createBranchBuilder(leafNode)
-		} else {
-			this.parent.addNode(leafNode)
-		}
-		this.buffer[0] = value
-		this.count = 1
-	} else {
-		this.buffer[this.count] = value
-		this.count += 1
-	}
-}
-
-func (this *leafBuilder) build() binaryNode {
-	if this.count == 0 {
-		return createEmptyLeafNode()
-	} else if this.parent == nil {
-		return this.createLeafFromBuffer()
-	} else {
-		return this.parent.build(this.createLeafFromBuffer())
-	}
-}
-
-func (this *leafBuilder) computeSize() int {
-	answer := this.count
-	if this.parent != nil {
-		answer += this.parent.computeSize()
-	}
-	return answer
-}
-
 func createBranchBuilder(left binaryNode) *branchBuilder {
 	return &branchBuilder{left: left}
 }
 
-func (this *branchBuilder) addNode(node binaryNode) {
+func (this *branchBuilder) addChild(node binaryNode) {
 	if this.right == nil {
 		this.right = node
 	} else {
@@ -91,7 +77,7 @@ func (this *branchBuilder) addNode(node binaryNode) {
 		if this.parent == nil {
 			this.parent = createBranchBuilder(branchNode)
 		} else {
-			this.parent.addNode(branchNode)
+			this.parent.addChild(branchNode)
 		}
 		this.left = node
 		this.right = nil
